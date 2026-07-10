@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: foundation-grant-signal-lab-api
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_MODEL
+        value: gpt-5.6-terra
+      - key: OPENAI_REASONING_EFFORT
+        value: medium
+      - key: FRONTEND_ORIGIN
+        value: https://wayan.com,https://www.wayan.com
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false

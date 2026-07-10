@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foundation Grant Signal Lab</title>
+    <meta
+      name="description"
+      content="AI-assisted grant screening for foundation donors, with evidence, risks, next actions, and saved review history."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./config.js"></script>
+    <script src="./app.js" type="module"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand-lockup" href="#top" aria-label="Foundation Grant Signal Lab">
+        <span class="brand-mark">F</span>
+        <span>
+          <strong>Foundation Grant Signal Lab</strong>
+          <small>AI grants manager tool</small>
+        </span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#review">Review</a>
+        <a href="#history">History</a>
+        <a href="#how">How it works</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div>
+          <p class="eyebrow accent">Live tool</p>
+          <h1>Turn a grant idea into a donor-ready decision memo.</h1>
+          <p class="lede">
+            Paste an applicant, proposal, and foundation strategy. The tool
+            returns a grant signal score, model route, board line, evidence,
+            risks, and next actions. Reviews are saved to a Neon database so the
+            foundation can build a lightweight decision record.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="#review">Run a review</a>
+            <button class="button ghost" id="load-history-button" type="button">
+              Load saved reviews
+            </button>
+          </div>
+        </div>
+        <aside class="hero-card" aria-label="Tool status">
+          <div>
+            <span>Backend</span>
+            <strong id="api-status">Checking...</strong>
+          </div>
+          <div>
+            <span>Storage</span>
+            <strong id="storage-status">Neon target</strong>
+          </div>
+          <div>
+            <span>Output</span>
+            <strong>Board-ready rationale</strong>
+          </div>
+        </aside>
+      </section>
+
+      <section class="workspace" id="review">
+        <form class="input-panel" id="review-form">
+          <div class="panel-heading">
+            <p class="eyebrow">Grant context</p>
+            <span id="readiness">Ready for review</span>
+          </div>
+
+          <label>
+            Applicant
+            <textarea id="applicant" rows="5" required></textarea>
+          </label>
+
+          <label>
+            Proposal
+            <textarea id="proposal" rows="7" required></textarea>
+          </label>
+
+          <label>
+            Foundation strategy
+            <textarea id="foundationStrategy" rows="6" required></textarea>
+          </label>
+
+          <button class="button full" id="submit-button" type="submit">
+            Run grant signal review
+          </button>
+          <p class="status-message" id="form-status" role="status"></p>
+        </form>
+
+        <article class="analysis-panel" id="analysis">
+          <div class="score-row">
+            <div class="score-dial">
+              <span id="score">--</span>
+              <small>/100</small>
+            </div>
+            <div>
+              <p class="eyebrow">Recommendation</p>
+              <h2 id="verdict">Run a review to generate a decision memo.</h2>
+              <p class="score-band" id="route">Model route pending</p>
+            </div>
+          </div>
+
+          <div class="board-line">
+            <p class="eyebrow">Board line</p>
+            <p id="board-line">
+              The board line will appear here after the API reviews the grant
+              context.
+            </p>
+          </div>
+
+          <div class="evidence-grid">
+            <section class="signal-list">
+              <h3>Strongest evidence</h3>
+              <ul id="strongest-evidence"></ul>
+            </section>
+            <section class="signal-list">
+              <h3>Donor risks</h3>
+              <ul id="donor-risks"></ul>
+            </section>
+            <section class="signal-list">
+              <h3>Next actions</h3>
+              <ul id="next-actions"></ul>
+            </section>
+          </div>
+        </article>
+      </section>
+
+      <section class="history-section" id="history">
+        <div>
+          <p class="eyebrow accent">Saved decisions</p>
+          <h2>Review history</h2>
+          <p>
+            Saved reviews give a foundation a lightweight audit trail: what was
+            reviewed, how the opportunity was scored, and what diligence came
+            next.
+          </p>
+        </div>
+        <div class="history-list" id="history-list"></div>
+      </section>
+
+      <section class="how-section" id="how">
+        <div>
+          <p class="eyebrow accent">Why donors should care</p>
+          <h2>A grants manager should reduce false confidence.</h2>
+          <p>
+            The point is not to automate grantmaking. The point is to make
+            judgment visible: fit, risk, missing evidence, next diligence, and
+            board language that can survive scrutiny.
+          </p>
+        </div>
+        <div class="api-grid">
+          <article>
+            <span>Sol</span>
+            <h3>Hard judgment</h3>
+            <p>
+              Use the strongest model path for high-stakes review, contested
+              evidence, and board-facing recommendations.
+            </p>
+          </article>
+          <article>
+            <span>Terra</span>
+            <h3>Portfolio work</h3>
+            <p>
+              Use balanced production review for everyday summaries,
+              comparisons, diligence questions, and staff workflows.
+            </p>
+          </article>
+          <article>
+            <span>Luna</span>
+            <h3>Volume screening</h3>
+            <p>
+              Use fast screening for eligibility, missing fields, routing, and
+              duplicate intake triage.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

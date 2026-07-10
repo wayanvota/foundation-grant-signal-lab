@@ -13,11 +13,6 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/.vinext/
-/out/
-
 # misc
 .DS_Store
 *.pem
@@ -31,12 +26,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# vercel
-.vercel
-
-# typescript
-next-env.d.ts
+# generated and local runtime output
 /dist/
+/dist-static/
+/.vinext/
 /.wrangler/
-/outputs/
+/coverage/
 /work/
