@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Foundation Grant Signal Lab</title>
+  <desc id="desc">Social preview card for an AI-assisted foundation grant review tool.</desc>
+  <rect width="1200" height="630" fill="#faf9f6"/>
+  <rect x="48" y="48" width="1104" height="534" rx="8" fill="#ffffff" stroke="#111111" stroke-width="3"/>
+  <rect x="88" y="88" width="74" height="74" rx="4" fill="#111111"/>
+  <text x="125" y="139" text-anchor="middle" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="800">F</text>
+  <text x="88" y="226" fill="#ff5600" font-family="Menlo, Consolas, monospace" font-size="24" font-weight="700" letter-spacing="2">LIVE FOUNDATION TOOL</text>
+  <text x="88" y="309" fill="#111111" font-family="Inter, Arial, sans-serif" font-size="70" font-weight="650">Foundation Grant</text>
+  <text x="88" y="386" fill="#111111" font-family="Inter, Arial, sans-serif" font-size="70" font-weight="650">Signal Lab</text>
+  <text x="88" y="462" fill="#313130" font-family="Inter, Arial, sans-serif" font-size="31">Evidence, funder risks, next actions, and</text>
+  <text x="88" y="508" fill="#313130" font-family="Inter, Arial, sans-serif" font-size="31">board-ready rationale for grant review.</text>
+  <rect x="816" y="116" width="236" height="236" rx="8" fill="#faf9f6" stroke="#dedbd6" stroke-width="3"/>
+  <text x="934" y="217" text-anchor="middle" fill="#111111" font-family="Inter, Arial, sans-serif" font-size="82" font-weight="750">41</text>
+  <text x="934" y="259" text-anchor="middle" fill="#626260" font-family="Inter, Arial, sans-serif" font-size="26">/100</text>
+  <text x="934" y="306" text-anchor="middle" fill="#111111" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700">Hard judgment</text>
+  <rect x="816" y="382" width="236" height="50" rx="4" fill="#111111"/>
+  <text x="934" y="416" text-anchor="middle" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="700">Board line ready</text>
+</svg>

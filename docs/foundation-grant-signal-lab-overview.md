@@ -8,7 +8,7 @@ The tool turns three inputs into a board-ready decision memo:
 - Proposal summary
 - Foundation strategy, priorities, and risk posture
 
-It returns a first-pass signal score, a review route, a board line, visible evidence, funder risks, and next actions. The point is not to automate grantmaking. The point is to make early review judgment visible, testable, and easier to defend.
+It returns a first-pass signal score, a review route, a board line, visible evidence, funder risks, and next actions. Automating grantmaking is the wrong goal. This tool makes early review judgment visible, testable, and easier to defend.
 
 ## What The Site Does
 
@@ -22,7 +22,7 @@ The site gives foundation staff a practical way to pressure-test a grant idea ag
 - `Funder risks`: The risks hidden under optimistic proposal language.
 - `Next actions`: Diligence questions staff can send the same day.
 
-The site also includes a one-click stored sample review. The sample uses Riverbend Community Health Partners, a credible rural health nonprofit with a weak AI proposal. It is deliberately scored at `41/100` because that is where judgment matters: the applicant is plausible, the need is real, and the proposal is not ready.
+The site also includes a one-click stored sample review. The sample uses Calder Ridge Community Health Partners, a fictional composite rural health nonprofit with a weak AI proposal. It is deliberately scored at `41/100` because that is where judgment matters: the applicant is plausible, the need is real, and the proposal is not ready.
 
 ## What It Does Not Do
 
@@ -66,7 +66,7 @@ The sample shows:
 - Patient-facing AI risks in a Medicaid population
 - Diligence questions that a foundation staffer could send immediately
 
-The strongest sample question is: What would Riverbend build first if the grant were `$150,000` instead of `$450,000`? That question reveals whether the plan belongs to the applicant or the vendor.
+The strongest sample question is: What would Calder Ridge build first if the grant were `$150,000` instead of `$450,000`? That question reveals whether the plan belongs to the applicant or the vendor.
 
 ### Live Review Form
 

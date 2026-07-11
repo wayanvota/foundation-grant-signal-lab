@@ -14,7 +14,7 @@ async function copyStatic(target) {
   await fs.rm(target, { recursive: true, force: true });
   await fs.mkdir(target, { recursive: true });
 
-  for (const file of ["index.html", "styles.css", "app.js"]) {
+  for (const file of ["index.html", "styles.css", "app.js", "og-image.svg"]) {
     await fs.copyFile(path.join(source, file), path.join(target, file));
   }
 

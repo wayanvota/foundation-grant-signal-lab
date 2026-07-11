@@ -26,7 +26,7 @@ It returns:
 - `Funder risks`: The risks hidden under optimistic proposal language.
 - `Next actions`: Diligence questions staff can send the same day.
 
-The public site also includes a one-click stored sample review. The sample is deterministic, renders instantly, and does not call the API. It uses a credible rural health nonprofit with a weak AI proposal because that is where review judgment matters most.
+The public site also includes a one-click stored sample review. The sample is deterministic, renders instantly, and does not call the API. It uses Calder Ridge Community Health Partners, a fictional composite rural health nonprofit with a weak AI proposal, because that is where review judgment matters most.
 
 ## What It Does Not Do
 
@@ -162,6 +162,8 @@ https://wayan.com/grant-signal-lab/
 ```
 
 If the API URL changes, rerun `npm run build:frontend` with the new `PUBLIC_API_BASE_URL`.
+
+After uploading the replacement files, purge the CDN or host cache for `/grant-signal-lab/*` before sharing the URL on LinkedIn or other social platforms. Link crawlers can otherwise build preview cards from stale HTML.
 
 ## API
 

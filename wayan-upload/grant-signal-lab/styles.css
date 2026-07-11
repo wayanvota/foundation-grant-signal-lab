@@ -189,6 +189,14 @@ h3 {
   margin-top: 26px;
 }
 
+.sample-note {
+  max-width: 660px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
 .button {
   display: inline-flex;
   min-height: 48px;

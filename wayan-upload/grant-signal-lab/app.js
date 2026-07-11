@@ -3,15 +3,15 @@ const apiBaseUrl = (config.apiBaseUrl || "").replace(/\/$/, "");
 
 const examples = {
   applicant:
-    "Riverbend Community Health Partners is a 14-year-old nonprofit serving three counties in the rural Southeast, operating six community health clinics with a $9.2M annual budget and 84 staff. Roughly 60 percent of revenue comes from Medicaid reimbursement, the rest from state contracts and foundation grants. The organization has a stable leadership team, clean audits for the past five years, and a strong reputation with county health departments. It has no in-house technology staff. Its last major grant-funded technology project, a 2022 telehealth expansion, ended when the funding did.",
+    "Calder Ridge Community Health Partners is a fictional composite organization created for this demonstration. Any resemblance to a real nonprofit is coincidental. Calder Ridge is a 14-year-old nonprofit serving three counties in the rural Southeast, operating six community health clinics with a $9.2M annual budget and 84 staff. Roughly 60 percent of revenue comes from Medicaid reimbursement, the rest from state contracts and foundation grants. The organization has a stable leadership team, clean audits for the past five years, and a strong reputation with county health departments. It has no in-house technology staff. Its last major grant-funded technology project, a 2022 telehealth expansion, ended when the funding did.",
   proposal:
-    "Riverbend requests $450,000 over 24 months to launch an AI-powered patient navigation assistant across its six clinics. The tool, built on a commercial large language model platform through a technology vendor, will answer patient questions, guide appointment scheduling, and reduce front-desk workload so staff can focus on complex cases. The proposal projects that the assistant will handle 70 percent of routine inquiries by month 12, improve patient satisfaction, and position Riverbend as a regional leader in equitable AI adoption. Year one covers vendor licensing, integration, and training. Year two covers expansion to Spanish-language support and a community advisory board. The proposal states that efficiency gains will allow the program to sustain itself after the grant period.",
+    "Calder Ridge requests $450,000 over 24 months to launch an AI-powered patient navigation assistant across its six clinics. The tool, built on a commercial large language model platform through a technology vendor, will answer patient questions, guide appointment scheduling, and reduce front-desk workload so staff can focus on complex cases. The proposal projects that the assistant will handle 70 percent of routine inquiries by month 12, improve patient satisfaction, and position Calder Ridge as a regional leader in equitable AI adoption. Year one covers vendor licensing, integration, and training. Year two covers expansion to Spanish-language support and a community advisory board. The proposal states that efficiency gains will allow the program to sustain itself after the grant period.",
   foundationStrategy:
     "We are a regional health foundation making $18M in annual grants, focused on access to care in underserved rural communities. Our board has approved a technology funding pillar but has asked staff to distinguish durable capability from pilot projects that disappear when our money does. We prioritize evidence of outcomes over adoption metrics, require a credible sustainability plan for anything above $250,000, and our trustees have raised concerns about AI tools handling patient communication in low-income communities. Risk posture: moderate. We will fund earlier-stage work when the learning is designed to be captured and shared.",
 };
 
 const sampleReview = {
-  id: "riverbend-sample",
+  id: "calder-ridge-sample",
   score: 41,
   route: "Sol",
   routeDisplay:
@@ -19,7 +19,7 @@ const sampleReview = {
   verdict:
     "Do not invite a full proposal in current form. The applicant is credible; the proposal is not yet. Return with specific revision requests before a site visit.",
   boardLine:
-    "Riverbend is a strong access-to-care operator with a weak technology track record asking us to fund a vendor-dependent AI pilot. The proposal measures adoption, not health outcomes, and its sustainability plan is an assertion, not a budget. Staff recommend a structured revision request rather than a decline: the underlying need is real and inside our strategy.",
+    "Calder Ridge is a strong access-to-care operator with a weak technology track record asking us to fund a vendor-dependent AI pilot. The proposal measures adoption, not health outcomes, and its sustainability plan is an assertion, not a budget. Staff recommend a structured revision request rather than a decline: the underlying need is real and inside our strategy.",
   strongestEvidence: [
     "Fourteen years of stable operation and clean audits.",
     "Established trust with county health departments, which most technology pilots in this region lack.",
@@ -38,7 +38,7 @@ const sampleReview = {
     "Ask what happens to a patient when the assistant is wrong, and who reviews its answers.",
     "Require a sustainability budget with named revenue sources, not projected efficiencies.",
     "Ask the vendor's other nonprofit clients for retention data after grant funding ended.",
-    "Ask what Riverbend would build first if the grant were $150,000 instead of $450,000; the answer will reveal whether this is their plan or the vendor's.",
+    "Ask what Calder Ridge would build first if the grant were $150,000 instead of $450,000; the answer will reveal whether this is their plan or the vendor's.",
   ],
 };
 
@@ -123,7 +123,7 @@ async function runReview({ source = "manual" } = {}) {
     }
 
     renderReview(data);
-    setStatus(`Saved review ${data.id}.`, false);
+    setStatus("Review saved. Public visitors cannot browse saved reviews.", false);
   } catch (error) {
     setStatus(error.message || "Review failed.", true);
   } finally {

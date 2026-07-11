@@ -8,9 +8,35 @@
       name="description"
       content="AI-assisted grant screening for foundation funders, with evidence, risks, next actions, and board-ready rationale."
     />
-    <link rel="stylesheet" href="./styles.css" />
-    <script src="./config.js"></script>
-    <script src="./app.js" type="module"></script>
+    <meta
+      property="og:title"
+      content="Foundation Grant Signal Lab"
+    />
+    <meta
+      property="og:description"
+      content="A live AI-assisted grant review tool that turns proposal context into evidence, funder risks, next actions, and board-ready rationale."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://wayan.com/grant-signal-lab/" />
+    <meta
+      property="og:image"
+      content="https://wayan.com/grant-signal-lab/og-image.svg"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Foundation Grant Signal Lab" />
+    <meta
+      name="twitter:description"
+      content="A live AI-assisted grant review tool for foundation staff who need visible evidence, risks, next actions, and board-ready rationale."
+    />
+    <meta
+      name="twitter:image"
+      content="https://wayan.com/grant-signal-lab/og-image.svg"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260711b" />
+    <script src="./config.js?v=20260711b"></script>
+    <script src="./app.js?v=20260711b" type="module"></script>
   </head>
   <body>
     <header class="topbar">
@@ -46,6 +72,10 @@
               Load sample review
             </button>
           </div>
+          <p class="sample-note">
+            Calder Ridge is a fictional composite organization created for this
+            demonstration. Any resemblance to a real nonprofit is coincidental.
+          </p>
         </div>
         <aside class="hero-card" aria-label="Tool status">
           <div>
@@ -114,7 +144,8 @@
           <p class="status-message" id="form-status" role="status"></p>
           <p class="privacy-note">
             Demonstration scope: do not paste confidential applicant information.
-            Public visitors cannot browse saved reviews.
+            Public visitors cannot browse saved reviews. Pasted text is processed
+            by OpenAI and reviews are stored in the tool's database.
           </p>
         </form>
 
@@ -211,9 +242,8 @@
           <p class="eyebrow accent">Why funders should care</p>
           <h2>A grants manager should reduce false confidence.</h2>
           <p>
-            The point is not to automate grantmaking. The point is to make
-            judgment visible: fit, risk, missing evidence, next diligence, and
-            board language that can survive scrutiny.
+            Automating grantmaking is the wrong goal. This tool makes early
+            review judgment visible, testable, and easier to defend.
           </p>
           <p>
             The model is asked for evidence, risks, and next actions, not a
