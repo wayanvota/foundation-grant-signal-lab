@@ -3,11 +3,11 @@ const apiBaseUrl = (config.apiBaseUrl || "").replace(/\/$/, "");
 
 const examples = {
   applicant:
-    "BrightStart Health Alliance is a 9-year-old nonprofit running community health worker programs in rural North Carolina and South Carolina.",
+    "SureStart AI Navigation is a two-year-old nonprofit affiliated with a commercial care-navigation software vendor. It has a small advisory board, one clinic pilot, and no published evaluation or audited financial statements yet.",
   proposal:
-    "They are asking for $750,000 over 24 months to deploy AI-assisted case navigation for maternal health referrals, train 80 community health workers, and publish implementation evidence for Medicaid agencies.",
+    "The applicant requests $850,000 over 24 months to deploy a proprietary AI referral chatbot across community clinics, train clinic staff, and publish a learning memo. The proposal says the tool will reduce missed referrals and improve access, but it does not include baseline data, model performance evidence, data-sharing terms, a vendor exit plan, or a named public-sector adoption partner.",
   foundationStrategy:
-    "The foundation funds health equity, public benefit technology, and evidence that can influence public systems. Trustees worry about vendor lock-in, weak evaluation plans, and pilots that do not survive after grant funding.",
+    "The foundation funds responsible AI for health equity when there is credible governance, local ownership, public benefit, and evidence that can influence public systems. Trustees worry about vendor lock-in, weak evaluation plans, and pilots that do not survive after grant funding.",
 };
 
 const fields = {
@@ -15,6 +15,8 @@ const fields = {
   proposal: document.querySelector("#proposal"),
   foundationStrategy: document.querySelector("#foundationStrategy"),
   form: document.querySelector("#review-form"),
+  sampleButton: document.querySelector("#sample-button"),
+  sampleInlineButton: document.querySelector("#sample-inline-button"),
   submitButton: document.querySelector("#submit-button"),
   status: document.querySelector("#form-status"),
   readiness: document.querySelector("#readiness"),
@@ -25,15 +27,9 @@ const fields = {
   verdict: document.querySelector("#verdict"),
   boardLine: document.querySelector("#board-line"),
   evidence: document.querySelector("#strongest-evidence"),
-  risks: document.querySelector("#donor-risks"),
+  risks: document.querySelector("#funder-risks"),
   actions: document.querySelector("#next-actions"),
-  history: document.querySelector("#history-list"),
-  loadHistoryButton: document.querySelector("#load-history-button"),
 };
-
-fields.applicant.value = examples.applicant;
-fields.proposal.value = examples.proposal;
-fields.foundationStrategy.value = examples.foundationStrategy;
 
 updateReadiness();
 checkHealth();
@@ -43,21 +39,39 @@ fields.form.addEventListener("submit", async (event) => {
   await runReview();
 });
 
-fields.loadHistoryButton.addEventListener("click", loadHistory);
+for (const button of [fields.sampleButton, fields.sampleInlineButton]) {
+  button.addEventListener("click", loadSampleReview);
+}
 
 for (const field of [fields.applicant, fields.proposal, fields.foundationStrategy]) {
   field.addEventListener("input", updateReadiness);
 }
 
-async function runReview() {
+async function loadSampleReview() {
+  fields.applicant.value = examples.applicant;
+  fields.proposal.value = examples.proposal;
+  fields.foundationStrategy.value = examples.foundationStrategy;
+  updateReadiness();
+  setStatus("Loaded a deliberately weak sample. Running review now.", false);
+  await runReview({ source: "sample" });
+}
+
+async function runReview({ source = "manual" } = {}) {
   if (!apiBaseUrl) {
     setStatus("Set apiBaseUrl in config.js before running reviews.", true);
     return;
   }
 
   fields.submitButton.disabled = true;
+  fields.sampleButton.disabled = true;
+  fields.sampleInlineButton.disabled = true;
   fields.submitButton.textContent = "Reviewing...";
-  setStatus("Sending grant context to the live review API.", false);
+  setStatus(
+    source === "sample"
+      ? "Running the sample through the live review API."
+      : "Sending grant context to the live review API.",
+    false,
+  );
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/reviews`, {
@@ -77,11 +91,12 @@ async function runReview() {
 
     renderReview(data);
     setStatus(`Saved review ${data.id}.`, false);
-    await loadHistory();
   } catch (error) {
     setStatus(error.message || "Review failed.", true);
   } finally {
     fields.submitButton.disabled = false;
+    fields.sampleButton.disabled = false;
+    fields.sampleInlineButton.disabled = false;
     fields.submitButton.textContent = "Run grant signal review";
   }
 }
@@ -93,65 +108,36 @@ async function checkHealth() {
     return;
   }
 
+  const controller = new AbortController();
+  const wakingTimer = window.setTimeout(() => {
+    fields.apiStatus.textContent = "Waking review engine";
+    fields.storageStatus.textContent = "About 20 seconds";
+  }, 1200);
+  const timeout = window.setTimeout(() => controller.abort(), 22000);
+
   try {
-    const response = await fetch(`${apiBaseUrl}/health`);
+    const response = await fetch(`${apiBaseUrl}/health`, { signal: controller.signal });
     const data = await response.json();
     fields.apiStatus.textContent = data.ok ? "Live" : "Needs setup";
     fields.storageStatus.textContent = data.database === "neon" ? "Neon connected" : data.database;
   } catch {
-    fields.apiStatus.textContent = "Unavailable";
-    fields.storageStatus.textContent = "Check Render";
+    fields.apiStatus.textContent = "Still waking";
+    fields.storageStatus.textContent = "Try review in a moment";
+  } finally {
+    window.clearTimeout(wakingTimer);
+    window.clearTimeout(timeout);
   }
-}
-
-async function loadHistory() {
-  if (!apiBaseUrl) return;
-
-  fields.history.innerHTML = '<p class="status-message">Loading saved reviews...</p>';
-
-  try {
-    const response = await fetch(`${apiBaseUrl}/api/reviews?limit=12`);
-    const reviews = await response.json();
-    fields.history.innerHTML = "";
-
-    if (!reviews.length) {
-      fields.history.innerHTML = '<p class="status-message">No saved reviews yet.</p>';
-      return;
-    }
-
-    for (const review of reviews) {
-      const item = document.createElement("button");
-      item.type = "button";
-      item.className = "history-card";
-      item.innerHTML = `
-        <span>${new Date(review.createdAt).toLocaleString()}</span>
-        <strong>${escapeHtml(review.verdict)}</strong>
-        <small>${Number(review.score).toFixed(0)}/100 · ${escapeHtml(review.route)}</small>
-        <p>${escapeHtml(review.boardLine)}</p>
-      `;
-      item.addEventListener("click", () => fetchReview(review.id));
-      fields.history.append(item);
-    }
-  } catch {
-    fields.history.innerHTML =
-      '<p class="status-message error">Could not load saved reviews.</p>';
-  }
-}
-
-async function fetchReview(id) {
-  const response = await fetch(`${apiBaseUrl}/api/reviews/${id}`);
-  const review = await response.json();
-  renderReview(review);
-  document.querySelector("#analysis").scrollIntoView({ behavior: "smooth" });
 }
 
 function renderReview(review) {
   fields.score.textContent = Number(review.score).toFixed(0);
-  fields.route.textContent = `${review.route} route · ${scoreBand(review.score)}`;
+  fields.route.textContent = `${routeLabel(review.route)} · ${review.route} route · ${scoreBand(
+    review.score,
+  )}`;
   fields.verdict.textContent = review.verdict;
   fields.boardLine.textContent = review.boardLine;
   renderList(fields.evidence, review.strongestEvidence);
-  renderList(fields.risks, review.donorRisks);
+  renderList(fields.risks, review.funderRisks || review.donorRisks);
   renderList(fields.actions, review.nextActions);
 }
 
@@ -190,6 +176,13 @@ function scoreBand(score) {
   if (value >= 68) return "Promising";
   if (value >= 50) return "Needs diligence";
   return "Weak fit";
+}
+
+function routeLabel(route) {
+  if (route === "Sol") return "Hard judgment";
+  if (route === "Terra") return "Portfolio work";
+  if (route === "Luna") return "Volume screening";
+  return "Review route";
 }
 
 function escapeHtml(value = "") {

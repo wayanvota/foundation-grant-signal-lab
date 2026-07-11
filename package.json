@@ -2,7 +2,7 @@
   "name": "foundation-grant-signal-lab",
   "version": "1.0.0",
   "private": false,
-  "description": "AI-assisted grant screening for foundation donors, with OpenAI, Render, Neon, and static frontend files for wayan.com.",
+  "description": "AI-assisted grant screening for foundation funders, with OpenAI, Render, Neon, and static frontend files for wayan.com.",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"

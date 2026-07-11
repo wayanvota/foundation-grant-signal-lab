@@ -100,7 +100,7 @@ export async function generateGrantReview(input) {
 function buildPrompt(input) {
   return [
     "You are a foundation AI grants manager reviewing an opportunity for C-level foundation leaders.",
-    "Your job is to help a donor decide what to do next, not to sell the applicant.",
+    "Your job is to help a funder decide what to do next, not to sell the applicant.",
     "Be skeptical, specific, and evidence-dependent.",
     "Separate visible evidence from claims that still need diligence.",
     "Do not invent facts, funders, outcomes, budgets, audits, 990 details, or citations.",

@@ -1,18 +1,19 @@
 # Foundation Grant Signal Lab
 
 Foundation Grant Signal Lab is a live AI-assisted grant screening tool for
-foundation donors. It turns an applicant, proposal, and foundation strategy into
-a saved review with:
+foundation funders. It turns an applicant, proposal, and foundation strategy into
+a first-pass review with:
 
 - grant signal score
 - recommended model route: Sol, Terra, or Luna
 - board-ready recommendation line
 - strongest visible evidence
-- donor risks
+- funder risks
 - next diligence actions
 
 The tool is intentionally skeptical. It is designed to help a grants manager
-separate evidence from optimism, not to automate funding decisions.
+separate evidence from optimism, not to automate funding decisions. Public
+visitors cannot browse saved reviews by default.
 
 ## Architecture
 
@@ -72,6 +73,8 @@ Serve `frontend/` or `dist-static/` with any static file server.
    - `FRONTEND_ORIGIN=https://wayan.com,https://www.wayan.com`
    - `OPENAI_MODEL=gpt-5.6-terra`
    - `OPENAI_REASONING_EFFORT=medium`
+   - `REVIEW_RATE_LIMIT_MAX=8`
+   - `REVIEW_RATE_LIMIT_WINDOW_MS=600000`
 
 After deployment, check:
 
@@ -129,11 +132,13 @@ Request body:
 
 ### `GET /api/reviews`
 
-Returns recent saved reviews.
+Disabled by default for visitor privacy. Set `ENABLE_PUBLIC_HISTORY=true` only
+for a controlled internal deployment.
 
 ### `GET /api/reviews/:id`
 
-Returns one saved review.
+Disabled by default for visitor privacy. Set `ENABLE_PUBLIC_HISTORY=true` only
+for a controlled internal deployment.
 
 ## Why This Exists
 

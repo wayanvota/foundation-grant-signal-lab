@@ -6,7 +6,7 @@
     <title>Foundation Grant Signal Lab</title>
     <meta
       name="description"
-      content="AI-assisted grant screening for foundation donors, with evidence, risks, next actions, and saved review history."
+      content="AI-assisted grant screening for foundation funders, with evidence, risks, next actions, and board-ready rationale."
     />
     <link rel="stylesheet" href="./styles.css" />
     <script src="./config.js"></script>
@@ -23,8 +23,9 @@
       </a>
       <nav aria-label="Primary navigation">
         <a href="#review">Review</a>
-        <a href="#history">History</a>
+        <a href="#guardrails">Guardrails</a>
         <a href="#how">How it works</a>
+        <a href="#builder">Builder</a>
       </nav>
     </header>
 
@@ -32,17 +33,17 @@
       <section class="hero">
         <div>
           <p class="eyebrow accent">Live tool</p>
-          <h1>Turn a grant idea into a donor-ready decision memo.</h1>
+          <h1>Turn a grant idea into a board-ready decision memo.</h1>
           <p class="lede">
             Paste an applicant, proposal, and foundation strategy. The tool
-            returns a grant signal score, model route, board line, evidence,
-            risks, and next actions. Reviews are saved to a Neon database so the
-            foundation can build a lightweight decision record.
+            returns a first-pass signal score, review route, board line,
+            evidence, funder risks, and next actions. It is built for staff
+            triage before a human grantmaker makes the call.
           </p>
           <div class="hero-actions">
             <a class="button" href="#review">Run a review</a>
-            <button class="button ghost" id="load-history-button" type="button">
-              Load saved reviews
+            <button class="button ghost" id="sample-button" type="button">
+              Load sample review
             </button>
           </div>
         </div>
@@ -71,23 +72,50 @@
 
           <label>
             Applicant
-            <textarea id="applicant" rows="5" required></textarea>
+            <textarea
+              id="applicant"
+              rows="5"
+              maxlength="5000"
+              placeholder="Paste public or non-confidential applicant context."
+              required
+            ></textarea>
           </label>
 
           <label>
             Proposal
-            <textarea id="proposal" rows="7" required></textarea>
+            <textarea
+              id="proposal"
+              rows="7"
+              maxlength="7000"
+              placeholder="Paste the proposal summary, request amount, and visible claims."
+              required
+            ></textarea>
           </label>
 
           <label>
             Foundation strategy
-            <textarea id="foundationStrategy" rows="6" required></textarea>
+            <textarea
+              id="foundationStrategy"
+              rows="6"
+              maxlength="5000"
+              placeholder="Paste the funder's priorities, guardrails, and decision criteria."
+              required
+            ></textarea>
           </label>
 
-          <button class="button full" id="submit-button" type="submit">
-            Run grant signal review
-          </button>
+          <div class="form-actions">
+            <button class="button secondary" id="sample-inline-button" type="button">
+              Load sample review
+            </button>
+            <button class="button full" id="submit-button" type="submit">
+              Run grant signal review
+            </button>
+          </div>
           <p class="status-message" id="form-status" role="status"></p>
+          <p class="privacy-note">
+            Demonstration scope: do not paste confidential applicant information.
+            Public visitors cannot browse saved reviews.
+          </p>
         </form>
 
         <article class="analysis-panel" id="analysis">
@@ -99,6 +127,9 @@
             <div>
               <p class="eyebrow">Recommendation</p>
               <h2 id="verdict">Run a review to generate a decision memo.</h2>
+              <p class="decision-label">
+                First-pass signal for staff triage. Not a decision.
+              </p>
               <p class="score-band" id="route">Model route pending</p>
             </div>
           </div>
@@ -117,8 +148,8 @@
               <ul id="strongest-evidence"></ul>
             </section>
             <section class="signal-list">
-              <h3>Donor risks</h3>
-              <ul id="donor-risks"></ul>
+              <h3>Funder risks</h3>
+              <ul id="funder-risks"></ul>
             </section>
             <section class="signal-list">
               <h3>Next actions</h3>
@@ -128,54 +159,100 @@
         </article>
       </section>
 
-      <section class="history-section" id="history">
+      <section class="guardrail-section" id="guardrails">
         <div>
-          <p class="eyebrow accent">Saved decisions</p>
-          <h2>Review history</h2>
+          <p class="eyebrow accent">Responsible AI guardrails</p>
+          <h2>What this tool will not do.</h2>
           <p>
-            Saved reviews give a foundation a lightweight audit trail: what was
-            reviewed, how the opportunity was scored, and what diligence came
-            next.
+            The score is a triage signal, not a moral judgment on the applicant
+            or a funding decision. The tool structures evidence, risk, and next
+            diligence so a grantmaker can defend the call to a board.
           </p>
         </div>
-        <div class="history-list" id="history-list"></div>
+        <div class="guardrail-grid">
+          <article>
+            <h3>No automated awards</h3>
+            <p>It will not make the funding decision or replace trustee judgment.</p>
+          </article>
+          <article>
+            <h3>No mission-worthiness score</h3>
+            <p>It scores visible grant-review signal, not the value of the people or mission.</p>
+          </article>
+          <article>
+            <h3>No substitute for program officers</h3>
+            <p>It will not replace a human read of leadership, context, relationships, and trust.</p>
+          </article>
+          <article>
+            <h3>No hidden verification</h3>
+            <p>It reads only what you paste today. It does not verify claims against 990s or public sources yet.</p>
+          </article>
+        </div>
       </section>
 
       <section class="how-section" id="how">
         <div>
-          <p class="eyebrow accent">Why donors should care</p>
+          <p class="eyebrow accent">Why funders should care</p>
           <h2>A grants manager should reduce false confidence.</h2>
           <p>
             The point is not to automate grantmaking. The point is to make
             judgment visible: fit, risk, missing evidence, next diligence, and
             board language that can survive scrutiny.
           </p>
+          <p>
+            The model is asked for evidence, risks, and next actions, not a
+            summary and not praise. A grants platform should spend more
+            intelligence where judgment matters and less where the task is
+            repeatable.
+          </p>
         </div>
         <div class="api-grid">
           <article>
-            <span>Sol</span>
             <h3>Hard judgment</h3>
+            <span>Sol route</span>
             <p>
               Use the strongest model path for high-stakes review, contested
               evidence, and board-facing recommendations.
             </p>
           </article>
           <article>
-            <span>Terra</span>
             <h3>Portfolio work</h3>
+            <span>Terra route</span>
             <p>
               Use balanced production review for everyday summaries,
               comparisons, diligence questions, and staff workflows.
             </p>
           </article>
           <article>
-            <span>Luna</span>
             <h3>Volume screening</h3>
+            <span>Luna route</span>
             <p>
               Use fast screening for eligibility, missing fields, routing, and
               duplicate intake triage.
             </p>
           </article>
+        </div>
+      </section>
+
+      <section class="builder-section" id="builder">
+        <div>
+          <p class="eyebrow accent">Built by Wayan Vota</p>
+          <h2>Built from the funder side of the table.</h2>
+          <p>
+            I have spent three decades raising institutional funding and working
+            around grant decisions from both sides of the table. I built this
+            because a funder-side AI review layer should expose weak evidence,
+            not flatter a proposal into false confidence.
+          </p>
+        </div>
+        <div class="builder-card">
+          <h3>Talk to me about AI grants management</h3>
+          <p>
+            If this is the kind of tool your foundation needs, start the
+            conversation on LinkedIn.
+          </p>
+          <a class="button" href="https://www.linkedin.com/in/wayanvota/">
+            Contact Wayan on LinkedIn
+          </a>
         </div>
       </section>
     </main>
