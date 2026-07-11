@@ -392,10 +392,34 @@ textarea:focus {
   line-height: 1.35;
 }
 
+.score-explainer {
+  max-width: 500px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.claim-line {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+}
+
+.claim-line[hidden] {
+  display: none;
+}
+
 .board-line {
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   padding: 18px 0;
+}
+
+.claim-line p:last-child {
+  margin: 8px 0 0;
+  font-size: clamp(20px, 2.4vw, 30px);
+  line-height: 1.18;
 }
 
 .board-line p:last-child {

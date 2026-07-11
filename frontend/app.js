@@ -12,6 +12,8 @@ const examples = {
 
 const sampleReview = {
   id: "calder-ridge-sample",
+  claim:
+    "Calder Ridge claims a $450,000 AI patient-navigation assistant will handle 70 percent of routine inquiries across six clinics within 12 months and sustain itself after the grant ends.",
   score: 41,
   route: "Sol",
   routeDisplay:
@@ -54,6 +56,8 @@ const fields = {
   readiness: document.querySelector("#readiness"),
   apiStatus: document.querySelector("#api-status"),
   storageStatus: document.querySelector("#storage-status"),
+  claimSection: document.querySelector("#claim-section"),
+  claim: document.querySelector("#claim"),
   score: document.querySelector("#score"),
   route: document.querySelector("#route"),
   verdict: document.querySelector("#verdict"),
@@ -163,6 +167,7 @@ async function checkHealth() {
 }
 
 function renderReview(review) {
+  renderClaim(review.claim);
   fields.score.textContent = Number(review.score).toFixed(0);
   fields.route.textContent =
     review.routeDisplay ||
@@ -172,6 +177,12 @@ function renderReview(review) {
   renderList(fields.evidence, review.strongestEvidence);
   renderList(fields.risks, review.funderRisks || review.donorRisks);
   renderList(fields.actions, review.nextActions);
+}
+
+function renderClaim(claim) {
+  const value = typeof claim === "string" ? claim.trim() : "";
+  fields.claimSection.hidden = !value;
+  fields.claim.textContent = value;
 }
 
 function renderList(element, items = []) {

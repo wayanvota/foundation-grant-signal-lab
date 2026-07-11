@@ -5,6 +5,7 @@ create table if not exists grant_reviews (
   applicant text not null,
   proposal text not null,
   foundation_strategy text not null,
+  claim text,
   score numeric not null check (score >= 0 and score <= 100),
   model_route text not null check (model_route in ('Sol', 'Terra', 'Luna')),
   verdict text not null,
@@ -16,6 +17,9 @@ create table if not exists grant_reviews (
   response_json jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+alter table grant_reviews
+  add column if not exists claim text;
 
 create index if not exists grant_reviews_created_at_idx
   on grant_reviews (created_at desc);

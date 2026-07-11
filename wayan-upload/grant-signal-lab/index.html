@@ -151,6 +151,11 @@
         </form>
 
         <article class="analysis-panel" id="analysis">
+          <div class="claim-line" id="claim-section" hidden>
+            <p class="eyebrow">The claim</p>
+            <p id="claim"></p>
+          </div>
+
           <div class="score-row">
             <div class="score-dial">
               <span id="score">--</span>
@@ -162,6 +167,10 @@
               <p class="decision-label">
                 First-pass signal for staff triage. Not a decision, and not a
                 measure of the applicant.
+              </p>
+              <p class="score-explainer">
+                The score summarizes the balance of visible evidence against
+                funder risks, as a triage input to the route.
               </p>
               <p class="score-band" id="route">Model route pending</p>
             </div>

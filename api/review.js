@@ -7,6 +7,7 @@ export const reviewInputSchema = z.object({
 });
 
 const reviewOutputSchema = z.object({
+  claim: z.string().min(20).optional().nullable(),
   score: z.number().min(0).max(100),
   route: z.enum(["Sol", "Terra", "Luna"]),
   verdict: z.string().min(5),
@@ -42,6 +43,7 @@ export async function generateGrantReview(input) {
             type: "object",
             additionalProperties: false,
             required: [
+              "claim",
               "score",
               "route",
               "verdict",
@@ -51,6 +53,7 @@ export async function generateGrantReview(input) {
               "nextActions",
             ],
             properties: {
+              claim: { type: "string" },
               score: { type: "number", minimum: 0, maximum: 100 },
               route: { type: "string", enum: ["Sol", "Terra", "Luna"] },
               verdict: { type: "string" },
@@ -105,6 +108,7 @@ function buildPrompt(input) {
     "Separate visible evidence from claims that still need diligence.",
     "Do not invent facts, funders, outcomes, budgets, audits, 990 details, or citations.",
     "Use Sol as the route when the decision is judgment-heavy, Terra for normal portfolio operations, and Luna for high-volume screening.",
+    'Begin with "claim": one sentence restating the proposal in this form: what change, for whom, by when, for how much. Use only what the proposal states. Do not evaluate, praise, or criticize in this sentence. Plain declarative prose. Do not use em dashes.',
     "Make the boardLine usable in a trustee memo.",
     "",
     "<applicant>",
