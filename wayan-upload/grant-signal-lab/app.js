@@ -3,11 +3,43 @@ const apiBaseUrl = (config.apiBaseUrl || "").replace(/\/$/, "");
 
 const examples = {
   applicant:
-    "SureStart AI Navigation is a two-year-old nonprofit affiliated with a commercial care-navigation software vendor. It has a small advisory board, one clinic pilot, and no published evaluation or audited financial statements yet.",
+    "Riverbend Community Health Partners is a 14-year-old nonprofit serving three counties in the rural Southeast, operating six community health clinics with a $9.2M annual budget and 84 staff. Roughly 60 percent of revenue comes from Medicaid reimbursement, the rest from state contracts and foundation grants. The organization has a stable leadership team, clean audits for the past five years, and a strong reputation with county health departments. It has no in-house technology staff. Its last major grant-funded technology project, a 2022 telehealth expansion, ended when the funding did.",
   proposal:
-    "The applicant requests $850,000 over 24 months to deploy a proprietary AI referral chatbot across community clinics, train clinic staff, and publish a learning memo. The proposal says the tool will reduce missed referrals and improve access, but it does not include baseline data, model performance evidence, data-sharing terms, a vendor exit plan, or a named public-sector adoption partner.",
+    "Riverbend requests $450,000 over 24 months to launch an AI-powered patient navigation assistant across its six clinics. The tool, built on a commercial large language model platform through a technology vendor, will answer patient questions, guide appointment scheduling, and reduce front-desk workload so staff can focus on complex cases. The proposal projects that the assistant will handle 70 percent of routine inquiries by month 12, improve patient satisfaction, and position Riverbend as a regional leader in equitable AI adoption. Year one covers vendor licensing, integration, and training. Year two covers expansion to Spanish-language support and a community advisory board. The proposal states that efficiency gains will allow the program to sustain itself after the grant period.",
   foundationStrategy:
-    "The foundation funds responsible AI for health equity when there is credible governance, local ownership, public benefit, and evidence that can influence public systems. Trustees worry about vendor lock-in, weak evaluation plans, and pilots that do not survive after grant funding.",
+    "We are a regional health foundation making $18M in annual grants, focused on access to care in underserved rural communities. Our board has approved a technology funding pillar but has asked staff to distinguish durable capability from pilot projects that disappear when our money does. We prioritize evidence of outcomes over adoption metrics, require a credible sustainability plan for anything above $250,000, and our trustees have raised concerns about AI tools handling patient communication in low-income communities. Risk posture: moderate. We will fund earlier-stage work when the learning is designed to be captured and shared.",
+};
+
+const sampleReview = {
+  id: "riverbend-sample",
+  score: 41,
+  route: "Sol",
+  routeDisplay:
+    "Hard judgment. Board-facing decision, contested evidence, vulnerable population. This review should not be resolved at the screening tier.",
+  verdict:
+    "Do not invite a full proposal in current form. The applicant is credible; the proposal is not yet. Return with specific revision requests before a site visit.",
+  boardLine:
+    "Riverbend is a strong access-to-care operator with a weak technology track record asking us to fund a vendor-dependent AI pilot. The proposal measures adoption, not health outcomes, and its sustainability plan is an assertion, not a budget. Staff recommend a structured revision request rather than a decline: the underlying need is real and inside our strategy.",
+  strongestEvidence: [
+    "Fourteen years of stable operation and clean audits.",
+    "Established trust with county health departments, which most technology pilots in this region lack.",
+    "The request sits squarely inside the foundation's rural access strategy.",
+    "Spanish-language expansion and a community advisory board show awareness of the equity concern, even if neither is yet designed.",
+  ],
+  funderRisks: [
+    "The 70 percent inquiry-handling projection has no baseline behind it; current inquiry volume and staffing cost are never stated, so the efficiency claim cannot be checked.",
+    '"Efficiency gains will sustain the program" is the same claim that preceded the 2022 telehealth project, which ended with its funding.',
+    "The applicant has no technology staff, so the vendor owns the capability and the foundation would be funding a licensing relationship, not organizational capacity.",
+    "Patient-facing AI in a Medicaid population raises the exact concern this board has already flagged, and the proposal offers no error-handling, escalation, or monitoring design.",
+    "Success is defined by adoption and satisfaction, not by any health or access outcome the foundation's strategy names.",
+  ],
+  nextActions: [
+    "Request current inquiry volume, front-desk staffing costs, and the calculation behind the 70 percent projection.",
+    "Ask what happens to a patient when the assistant is wrong, and who reviews its answers.",
+    "Require a sustainability budget with named revenue sources, not projected efficiencies.",
+    "Ask the vendor's other nonprofit clients for retention data after grant funding ended.",
+    "Ask what Riverbend would build first if the grant were $150,000 instead of $450,000; the answer will reveal whether this is their plan or the vendor's.",
+  ],
 };
 
 const fields = {
@@ -52,8 +84,9 @@ async function loadSampleReview() {
   fields.proposal.value = examples.proposal;
   fields.foundationStrategy.value = examples.foundationStrategy;
   updateReadiness();
-  setStatus("Loaded a deliberately weak sample. Running review now.", false);
-  await runReview({ source: "sample" });
+  renderReview(sampleReview);
+  setStatus("Loaded stored sample review. No API call needed.", false);
+  document.querySelector("#analysis").scrollIntoView({ behavior: "smooth" });
 }
 
 async function runReview({ source = "manual" } = {}) {
@@ -131,9 +164,9 @@ async function checkHealth() {
 
 function renderReview(review) {
   fields.score.textContent = Number(review.score).toFixed(0);
-  fields.route.textContent = `${routeLabel(review.route)} · ${review.route} route · ${scoreBand(
-    review.score,
-  )}`;
+  fields.route.textContent =
+    review.routeDisplay ||
+    `${routeLabel(review.route)} · ${review.route} route · ${scoreBand(review.score)}`;
   fields.verdict.textContent = review.verdict;
   fields.boardLine.textContent = review.boardLine;
   renderList(fields.evidence, review.strongestEvidence);
