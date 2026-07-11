@@ -16,6 +16,12 @@ services:
         value: medium
       - key: FRONTEND_ORIGIN
         value: https://wayan.com,https://www.wayan.com
+      - key: ENABLE_PUBLIC_HISTORY
+        value: "false"
+      - key: REVIEW_RATE_LIMIT_MAX
+        value: "8"
+      - key: REVIEW_RATE_LIMIT_WINDOW_MS
+        value: "600000"
       - key: OPENAI_API_KEY
         sync: false
       - key: DATABASE_URL
