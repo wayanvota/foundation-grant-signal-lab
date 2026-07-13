@@ -278,6 +278,14 @@ h3 {
   font-size: 18px;
 }
 
+.review-output-card small {
+  display: block;
+  margin-top: 6px;
+  color: #313130;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .input-panel,
 .analysis-panel {
   display: grid;
@@ -315,6 +323,65 @@ h3 {
 .form-actions {
   display: grid;
   gap: 10px;
+}
+
+.review-progress {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #111111;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.review-progress[hidden] {
+  display: none;
+}
+
+.progress-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #313130;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.progress-copy strong {
+  flex: 0 0 auto;
+  color: #111111;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.progress-track {
+  position: relative;
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: #dedbd6;
+}
+
+.progress-track span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -38%;
+  width: 38%;
+  border-radius: inherit;
+  background: var(--orange);
+  animation: review-progress 1.15s ease-in-out infinite;
+}
+
+@keyframes review-progress {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(365%);
+  }
 }
 
 label {

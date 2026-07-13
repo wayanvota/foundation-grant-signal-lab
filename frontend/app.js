@@ -1,7 +1,6 @@
 const config = window.GRANT_SIGNAL_CONFIG || {};
 const apiBaseUrl = (config.apiBaseUrl || "").replace(/\/$/, "");
 const healthRetryLimit = 3;
-let backendConfirmed = false;
 
 const examples = {
   applicant:
@@ -55,9 +54,9 @@ const fields = {
   sampleInlineButton: document.querySelector("#sample-inline-button"),
   submitButton: document.querySelector("#submit-button"),
   status: document.querySelector("#form-status"),
+  progress: document.querySelector("#review-progress"),
+  progressLabel: document.querySelector("#progress-label"),
   readiness: document.querySelector("#readiness"),
-  apiStatus: document.querySelector("#api-status"),
-  storageStatus: document.querySelector("#storage-status"),
   claimSection: document.querySelector("#claim-section"),
   claim: document.querySelector("#claim"),
   score: document.querySelector("#score"),
@@ -70,7 +69,7 @@ const fields = {
 };
 
 updateReadiness();
-checkHealth();
+warmBackend();
 
 fields.form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -105,12 +104,18 @@ async function runReview({ source = "manual" } = {}) {
   fields.sampleButton.disabled = true;
   fields.sampleInlineButton.disabled = true;
   fields.submitButton.textContent = "Reviewing...";
-  setStatus(
-    source === "sample"
-      ? "Running the sample through the live review API."
-      : "Sending grant context to the live review API.",
-    false,
+  setReviewProgress(
+    true,
+    "Reviewing grant context. The first run can take longer while the review engine wakes.",
   );
+  setStatus("", false);
+
+  const progressTimer = window.setTimeout(() => {
+    setReviewProgress(
+      true,
+      "Still working. The review engine is reading the proposal and drafting the memo.",
+    );
+  }, 6500);
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/reviews`, {
@@ -129,11 +134,12 @@ async function runReview({ source = "manual" } = {}) {
     }
 
     renderReview(data);
-    markBackendLive();
     setStatus("Review saved. Public visitors cannot browse saved reviews.", false);
   } catch (error) {
     setStatus(error.message || "Review failed.", true);
   } finally {
+    window.clearTimeout(progressTimer);
+    setReviewProgress(false);
     fields.submitButton.disabled = false;
     fields.sampleButton.disabled = false;
     fields.sampleInlineButton.disabled = false;
@@ -141,56 +147,23 @@ async function runReview({ source = "manual" } = {}) {
   }
 }
 
-async function checkHealth(attempt = 0) {
+async function warmBackend(attempt = 0) {
   if (!apiBaseUrl) {
-    fields.apiStatus.textContent = "API URL missing";
-    fields.storageStatus.textContent = "Config needed";
     return;
   }
 
   const controller = new AbortController();
-  const wakingTimer = window.setTimeout(() => {
-    if (backendConfirmed) {
-      return;
-    }
-
-    fields.apiStatus.textContent = "Waking review engine";
-    fields.storageStatus.textContent = "About 20 seconds";
-  }, 1200);
   const timeout = window.setTimeout(() => controller.abort(), 22000);
 
   try {
-    const response = await fetch(`${apiBaseUrl}/health`, { signal: controller.signal });
-    const data = await response.json();
-    if (data.ok) {
-      markBackendLive(data.database);
-    } else {
-      fields.apiStatus.textContent = "Needs setup";
-      fields.storageStatus.textContent = data.database || "Check API";
-    }
+    await fetch(`${apiBaseUrl}/health`, { signal: controller.signal });
   } catch {
-    if (backendConfirmed) {
-      return;
-    }
-
     if (attempt < healthRetryLimit) {
-      fields.apiStatus.textContent = "Still waking";
-      fields.storageStatus.textContent = "Retrying health check";
-      window.setTimeout(() => checkHealth(attempt + 1), 3500);
-    } else {
-      fields.apiStatus.textContent = "Still waking";
-      fields.storageStatus.textContent = "Run review to wake it";
+      window.setTimeout(() => warmBackend(attempt + 1), 3500);
     }
   } finally {
-    window.clearTimeout(wakingTimer);
     window.clearTimeout(timeout);
   }
-}
-
-function markBackendLive(database = "neon") {
-  backendConfirmed = true;
-  fields.apiStatus.textContent = "Live";
-  fields.storageStatus.textContent = database === "neon" ? "Neon connected" : database;
 }
 
 function renderReview(review) {
@@ -204,6 +177,13 @@ function renderReview(review) {
   renderList(fields.evidence, review.strongestEvidence);
   renderList(fields.risks, review.funderRisks || review.donorRisks);
   renderList(fields.actions, review.nextActions);
+}
+
+function setReviewProgress(isRunning, message = "") {
+  fields.progress.hidden = !isRunning;
+  if (message) {
+    fields.progressLabel.textContent = message;
+  }
 }
 
 function renderClaim(claim) {

@@ -79,18 +79,21 @@
             demonstration. Any resemblance to a real nonprofit is coincidental.
           </p>
         </div>
-        <aside class="hero-card" aria-label="Tool status">
+        <aside class="hero-card review-output-card" aria-label="Review output">
           <div>
-            <span>Backend</span>
-            <strong id="api-status">Checking...</strong>
+            <span>First</span>
+            <strong>The claim</strong>
+            <small>One sentence naming what is being proposed.</small>
           </div>
           <div>
-            <span>Storage</span>
-            <strong id="storage-status">Neon target</strong>
+            <span>Then</span>
+            <strong>Evidence and risks</strong>
+            <small>The visible case for and against advancing.</small>
           </div>
           <div>
-            <span>Output</span>
-            <strong>Board-ready rationale</strong>
+            <span>Finally</span>
+            <strong>Next diligence</strong>
+            <small>Specific requests staff can send the same day.</small>
           </div>
         </aside>
       </section>
@@ -142,6 +145,21 @@
             <button class="button full" id="submit-button" type="submit">
               Run grant signal review
             </button>
+          </div>
+          <div
+            class="review-progress"
+            id="review-progress"
+            role="status"
+            aria-live="polite"
+            hidden
+          >
+            <div class="progress-copy">
+              <span id="progress-label">Reviewing grant context.</span>
+              <strong>Working</strong>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <span></span>
+            </div>
           </div>
           <p class="status-message" id="form-status" role="status"></p>
           <p class="privacy-note">
