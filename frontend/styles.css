@@ -101,6 +101,7 @@ nav a:hover {
 
 .hero,
 .workspace,
+.first-pass-section,
 .guardrail-section,
 .how-section,
 .builder-section {
@@ -119,6 +120,7 @@ nav a:hover {
   padding-top: 18px;
 }
 
+.first-pass-section,
 .guardrail-section,
 .how-section,
 .builder-section {
@@ -173,6 +175,7 @@ h3 {
 }
 
 .lede,
+.first-pass-section > div > p,
 .how-section > div > p,
 .guardrail-section > div > p,
 .builder-section > div > p {
@@ -492,9 +495,37 @@ textarea:focus {
   color: #111111;
 }
 
+.first-pass-list {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 16px;
+}
+
+.first-pass-list ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.first-pass-list li,
+.first-pass-list p {
+  color: #313130;
+  font-size: 15px;
+  line-height: 1.42;
+}
+
+.first-pass-list p {
+  margin: 18px 0 0;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
 @media (max-width: 980px) {
   .hero,
   .workspace,
+  .first-pass-section,
   .guardrail-section,
   .how-section,
   .builder-section {
