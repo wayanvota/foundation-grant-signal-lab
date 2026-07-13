@@ -1,5 +1,7 @@
 const config = window.GRANT_SIGNAL_CONFIG || {};
 const apiBaseUrl = (config.apiBaseUrl || "").replace(/\/$/, "");
+const healthRetryLimit = 3;
+let backendConfirmed = false;
 
 const examples = {
   applicant:
@@ -127,6 +129,7 @@ async function runReview({ source = "manual" } = {}) {
     }
 
     renderReview(data);
+    markBackendLive();
     setStatus("Review saved. Public visitors cannot browse saved reviews.", false);
   } catch (error) {
     setStatus(error.message || "Review failed.", true);
@@ -138,7 +141,7 @@ async function runReview({ source = "manual" } = {}) {
   }
 }
 
-async function checkHealth() {
+async function checkHealth(attempt = 0) {
   if (!apiBaseUrl) {
     fields.apiStatus.textContent = "API URL missing";
     fields.storageStatus.textContent = "Config needed";
@@ -147,6 +150,10 @@ async function checkHealth() {
 
   const controller = new AbortController();
   const wakingTimer = window.setTimeout(() => {
+    if (backendConfirmed) {
+      return;
+    }
+
     fields.apiStatus.textContent = "Waking review engine";
     fields.storageStatus.textContent = "About 20 seconds";
   }, 1200);
@@ -155,15 +162,35 @@ async function checkHealth() {
   try {
     const response = await fetch(`${apiBaseUrl}/health`, { signal: controller.signal });
     const data = await response.json();
-    fields.apiStatus.textContent = data.ok ? "Live" : "Needs setup";
-    fields.storageStatus.textContent = data.database === "neon" ? "Neon connected" : data.database;
+    if (data.ok) {
+      markBackendLive(data.database);
+    } else {
+      fields.apiStatus.textContent = "Needs setup";
+      fields.storageStatus.textContent = data.database || "Check API";
+    }
   } catch {
-    fields.apiStatus.textContent = "Still waking";
-    fields.storageStatus.textContent = "Try review in a moment";
+    if (backendConfirmed) {
+      return;
+    }
+
+    if (attempt < healthRetryLimit) {
+      fields.apiStatus.textContent = "Still waking";
+      fields.storageStatus.textContent = "Retrying health check";
+      window.setTimeout(() => checkHealth(attempt + 1), 3500);
+    } else {
+      fields.apiStatus.textContent = "Still waking";
+      fields.storageStatus.textContent = "Run review to wake it";
+    }
   } finally {
     window.clearTimeout(wakingTimer);
     window.clearTimeout(timeout);
   }
+}
+
+function markBackendLive(database = "neon") {
+  backendConfirmed = true;
+  fields.apiStatus.textContent = "Live";
+  fields.storageStatus.textContent = database === "neon" ? "Neon connected" : database;
 }
 
 function renderReview(review) {
