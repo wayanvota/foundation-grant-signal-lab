@@ -1,95 +1,88 @@
 # Foundation Grant Signal Lab
 
-Foundation Grant Signal Lab is a live AI-assisted review tool for foundation staff. It helps a grantmaker turn an applicant, proposal, and foundation strategy into a first-pass decision memo with visible evidence, funder risks, diligence questions, and board-ready language.
+Foundation Grant Signal Lab helps a foundation program officer answer one screening question: should this proposal advance to real diligence?
+
+The tool reads a proposal against the applicant's public Form 990 data and the foundation's stated strategy. It returns one traceable memo with a fixed recommendation, a board line, proposal-to-filing claim checks, financial diligence questions, strategy findings, an internal review route, and next actions.
 
 Live site: [wayan.com/grant-signal-lab](https://wayan.com/grant-signal-lab/)
 
-Live API: [foundation-grant-signal-lab-api.onrender.com](https://foundation-grant-signal-lab-api.onrender.com)
+API data source: [ProPublica Nonprofit Explorer API](https://projects.propublica.org/nonprofits/api/)
 
-Full overview: [docs/foundation-grant-signal-lab-overview.md](docs/foundation-grant-signal-lab-overview.md)
+## Decision boundary
 
-## What It Does
+The four recommendations are:
 
-The tool accepts three text blocks:
+- `ADVANCE`
+- `HOLD FOR DILIGENCE`
+- `DECLINE`
+- `NEEDS HUMAN CHECK`
 
-- Applicant context
-- Proposal summary
-- Foundation strategy, priorities, and risk posture
+These recommendations concern whether a proposal should enter real diligence. They are not grant-award decisions. The tool does not score, rank, or compare applicants.
 
-It returns:
+Proposal-to-filing divergence is always phrased as a program officer's question. A current proposal may differ legitimately from a public filing that describes an older tax year.
 
-- `Score`: A 0-100 first-pass signal for staff triage.
-- `Route`: Hard judgment, Portfolio work, or Volume screening.
-- `Verdict`: A short recommendation on whether the opportunity is ready, weak, or needs revision.
-- `Board line`: Trustee-ready language that can be used in an internal memo.
-- `Strongest evidence`: The visible facts that support the opportunity.
-- `Funder risks`: The risks hidden under optimistic proposal language.
-- `Next actions`: Diligence questions staff can send the same day.
+## Inputs
 
-The public site also includes a one-click stored sample review. The sample is deterministic, renders instantly, and does not call the API. It uses Calder Ridge Community Health Partners, a fictional composite rural health nonprofit with a weak AI proposal, because that is where review judgment matters most.
+- Applicant legal name
+- EIN, required
+- Filing relationship, including fiscal sponsorship, group returns, and Form 990-N
+- Proposal text, pasted or uploaded as TXT, Markdown, PDF, or DOCX
+- Foundation priorities, eligibility rules, and published criteria
 
-## What It Does Not Do
+## Evidence contract
 
-This tool does not make a funding decision. It structures the first pass so a human can make and defend the call.
+Every displayed finding carries at least one visible source:
 
-It does not score an applicant's mission or worthiness. It reads one proposal against one strategy and reports what the pasted evidence supports.
+- an exact proposal quote
+- a named filing line with tax year
+- an exact foundation criterion quote
 
-It does not replace a program officer's read of people, relationships, local context, trust, politics, or history.
+The filing layer uses the ProPublica organization endpoint through `src/irs990.js`. It preserves the source URL, filing tax year, tax period, and filing lag.
 
-It does not verify claims against outside sources. The current version reviews only what a user pastes. A high score means the argument is well evidenced as written, not that the facts have been independently checked.
+Financial signals expose their inputs. The operating-reserve measure is explicitly labeled a balance-sheet proxy because the API extract does not establish which net assets are liquid and unrestricted.
 
-It does not expose public saved-review history. Public review browsing is disabled by default to avoid turning a demo into a confidentiality incident.
+## Human-check conditions
 
-## Why Foundation Staff Would Use It
+Automated judgment stops when:
 
-Foundation staff are seeing more AI-polished proposals. Cleaner writing can make weak evidence harder to spot. This tool helps staff separate evidence from assertion, name the risks optimistic language covers, and send better diligence questions before a proposal reaches trustees.
+- no filed return with extracted financial detail is available
+- the applicant files Form 990-N
+- a fiscal year change creates a short period
+- the filing is a group return
+- the applicant operates through a fiscal sponsor
+- source safeguards cannot produce reliable input
+- the review engine times out
+- structured output fails validation after one retry
 
-Useful workflows include:
+Each condition returns `NEEDS HUMAN CHECK` with a reason and a concrete next step.
 
-- Screening letters of inquiry
-- Preparing a program officer's first read
-- Comparing similar opportunities
-- Drafting trustee memo language
-- Finding weak sustainability claims
-- Identifying vendor-dependence risks
-- Surfacing patient, community, or equity concerns in AI proposals
-- Turning a vague "promising but risky" reaction into specific diligence questions
+## Safety and privacy
+
+Proposal and strategy text are treated as untrusted data. Embedded model-control text is stripped once, the remainder is revalidated, and the review completes with judgment withheld for human inspection. Structured output is validated and retried once on the same provider.
+
+The service is stateless. It does not create accounts, sessions, saved reviews, or a review database. Uploaded documents are held in memory only for the current request.
+
+CI runs a repository-wide publication constraint check, syntax checks, tests, and the static build.
 
 ## Architecture
 
-- `frontend/`: Static HTML, CSS, and JavaScript for `wayan.com`
-- `api/`: Express API deployed on Render
-- `database/schema.sql`: Neon Postgres schema
-- `scripts/build-static.mjs`: Static build script for the public upload folder
-- `wayan-upload/grant-signal-lab/`: Generated files ready to upload to `wayan.com/grant-signal-lab/`
-- `docs/foundation-grant-signal-lab-overview.md`: Longer explanation of the site and its benefits
+- `src/irs990.js`: EIN normalization, filing lookup, filing-lag metadata, and unusable-filing detection
+- `src/filingAnalysis.js`: deterministic claim comparison and financial diligence questions
+- `src/inputSafeguards.js`: injection detection, stripping, and revalidation
+- `src/reviewPrompt.js`: prompt boundary for untrusted source material
+- `src/reviewSchema.js`: structured memo and traceability validation
+- `src/provider.js`: live review call, timeout, and same-provider schema retry
+- `api/review.js`: stateless orchestration and terminal human-check memos
+- `api/proposalFile.js`: in-memory TXT, Markdown, PDF, and DOCX extraction
+- `api/server.js`: Express API
+- `frontend/`: public interface
+- `test/`: acceptance and safety tests
 
-## Local Setup
-
-Install dependencies:
+## Local setup
 
 ```bash
 npm install
 cp .env.example .env
-```
-
-Set the required values in `.env`:
-
-```bash
-OPENAI_API_KEY=...
-DATABASE_URL=...
-FRONTEND_ORIGIN=http://localhost:4173
-```
-
-Run the Neon schema:
-
-```bash
-npm run migrate
-```
-
-Start the API:
-
-```bash
 npm start
 ```
 
@@ -99,122 +92,24 @@ Build the static frontend:
 PUBLIC_API_BASE_URL=http://localhost:10000 npm run build:frontend
 ```
 
-Serve `frontend/` or `dist-static/` with any static file server.
-
-## Configuration
-
-Required environment variables:
-
-```bash
-OPENAI_API_KEY=
-DATABASE_URL=
-FRONTEND_ORIGIN=https://wayan.com,https://www.wayan.com
-```
-
-Recommended production defaults:
-
-```bash
-OPENAI_MODEL=gpt-5.6-terra
-OPENAI_REASONING_EFFORT=medium
-DATABASE_SSL=true
-ENABLE_PUBLIC_HISTORY=false
-REVIEW_RATE_LIMIT_MAX=8
-REVIEW_RATE_LIMIT_WINDOW_MS=600000
-```
-
-`ENABLE_PUBLIC_HISTORY` should stay `false` for public demos. Set it to `true` only for a controlled internal deployment.
-
-## Render Deployment
-
-The included `render.yaml` defines a paid Starter web service:
-
-- Runtime: Node
-- Region: Oregon
-- Build command: `npm install`
-- Start command: `npm start`
-- Health check path: `/health`
-
-After deployment, verify:
-
-```bash
-curl https://foundation-grant-signal-lab-api.onrender.com/health
-curl https://foundation-grant-signal-lab-api.onrender.com/api/meta
-```
-
-## Upload To Wayan.com
-
-Build static files with the final Render API URL:
-
-```bash
-PUBLIC_API_BASE_URL=https://foundation-grant-signal-lab-api.onrender.com npm run build:frontend
-```
-
-Upload the contents of:
-
-```text
-wayan-upload/grant-signal-lab/
-```
-
-to:
-
-```text
-https://wayan.com/grant-signal-lab/
-```
-
-If the API URL changes, rerun `npm run build:frontend` with the new `PUBLIC_API_BASE_URL`.
-
-After uploading the replacement files, purge the CDN or host cache for `/grant-signal-lab/*` before sharing the URL on LinkedIn or other social platforms. Link crawlers can otherwise build preview cards from stale HTML.
-
-## API
-
-### `GET /health`
-
-Returns service status, database status, and whether the OpenAI key is present.
-
-### `GET /api/meta`
-
-Returns tool metadata, model name, storage mode, and whether public history is enabled.
-
-### `POST /api/reviews`
-
-Creates and saves a grant review.
-
-Request body:
-
-```json
-{
-  "applicant": "Applicant background...",
-  "proposal": "Proposal details...",
-  "foundationStrategy": "Foundation goals and concerns..."
-}
-```
-
-### `GET /api/reviews`
-
-Disabled by default for visitor privacy. Set `ENABLE_PUBLIC_HISTORY=true` only for a controlled internal deployment.
-
-### `GET /api/reviews/:id`
-
-Disabled by default for visitor privacy. Set `ENABLE_PUBLIC_HISTORY=true` only for a controlled internal deployment.
-
 ## Verification
-
-Core checks:
 
 ```bash
 npm run check
+npm test
 npm run build:frontend
 ```
 
-Recent live acceptance tests covered:
+The current suite covers filing exceptions, claim comparison, financial input visibility, prompt injection handling, provider retries, fixture privacy, and publication constraints.
 
-- Cold visitor state
-- Stored sample review
-- High-volume LOI triage
-- Sensitive patient-AI judgment calls
-- Prompt-injection resistance
-- Mobile layout and privacy behavior
+## API
 
-## License
+`GET /health` reports service readiness and the stateless storage policy.
 
-No license is declared yet. Treat this repository as source-visible, not open-source licensed, until a license file is added.
+`GET /api/meta` reports the decision, recommendation set, filing provider, and privacy posture.
+
+`POST /api/reviews` accepts JSON or multipart form data and returns the memo directly. It does not create or save a review record.
+
+## Release restriction
+
+The v2 work is prepared on `codex/foundation-grant-signal-lab-v2`. Do not merge it to `main` before August 14, 2026.

@@ -2,24 +2,28 @@
   "name": "foundation-grant-signal-lab",
   "version": "1.0.0",
   "private": false,
-  "description": "AI-assisted grant screening for foundation funders, with OpenAI, Render, Neon, and static frontend files for wayan.com.",
+  "description": "Stateless, filing-backed proposal diligence for foundation program officers.",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
     "start": "node api/server.js",
-    "dev": "ALLOW_MEMORY_STORE=true FRONTEND_ORIGIN=http://localhost:4173 node api/server.js",
+    "dev": "FRONTEND_ORIGIN=http://localhost:4173 node api/server.js",
     "migrate": "node api/migrate.js",
     "build:frontend": "node scripts/build-static.mjs",
-    "check": "node --check api/server.js && node --check api/review.js && node --check api/db.js && node --check frontend/app.js",
+    "check": "node --check api/server.js && node --check api/review.js && node --check src/provider.js && node --check frontend/app.js && npm run check:forbidden",
+    "check:forbidden": "node scripts/check-forbidden.mjs",
+    "test": "node --test",
     "serve:frontend": "npx serve frontend -l 4173"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "pg": "^8.16.3",
+    "mammoth": "^1.9.1",
+    "multer": "^2.0.2",
+    "pdf-parse": "^1.1.1",
     "zod": "^4.2.1"
   }
 }
