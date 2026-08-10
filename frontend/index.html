@@ -4,379 +4,123 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Foundation Grant Signal Lab</title>
-    <meta
-      name="description"
-      content="AI-assisted grant screening for foundation funders, with evidence, risks, next actions, and board-ready rationale."
-    />
+    <meta name="description" content="A traceable first-pass diligence memo for foundation staff reviewing a proposal against public filings and stated strategy." />
     <meta name="author" content="Wayan Vota" />
-    <meta
-      property="og:title"
-      content="Foundation Grant Signal Lab"
-    />
-    <meta
-      property="og:description"
-      content="A live AI-assisted grant review tool that turns proposal context into evidence, funder risks, next actions, and board-ready rationale."
-    />
+    <meta property="og:title" content="Foundation Grant Signal Lab" />
+    <meta property="og:description" content="Check proposal claims against public filings and stated foundation criteria before advancing to real diligence." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://wayan.com/grant-signal-lab/" />
-    <meta
-      property="og:image"
-      content="https://wayan.com/grant-signal-lab/og-image.png"
-    />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image" content="https://wayan.com/grant-signal-lab/og-image.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Foundation Grant Signal Lab" />
-    <meta
-      name="twitter:description"
-      content="A live AI-assisted grant review tool for foundation staff who need visible evidence, risks, next actions, and board-ready rationale."
-    />
-    <meta
-      name="twitter:image"
-      content="https://wayan.com/grant-signal-lab/og-image.png"
-    />
-    <link rel="stylesheet" href="./styles.css?v=20260713a" />
-    <script src="./config.js?v=20260713a"></script>
-    <script src="./app.js?v=20260713a" type="module"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260810" />
+    <script src="./config.js?v=20260810"></script>
+    <script src="./app.js?v=20260810" type="module"></script>
   </head>
   <body>
     <header class="topbar">
-      <a class="brand-lockup" href="#top" aria-label="Foundation Grant Signal Lab">
+      <a class="brand-lockup" href="#top" aria-label="Foundation Grant Signal Lab home">
         <span class="brand-mark">F</span>
-        <span>
-          <strong>Foundation Grant Signal Lab</strong>
-          <small>AI grants manager tool</small>
-        </span>
+        <span><strong>Foundation Grant Signal Lab</strong><small>For grantmakers</small></span>
       </a>
       <nav aria-label="Primary navigation">
         <a href="#review">Review</a>
-        <a href="#guardrails">Guardrails</a>
-        <a href="#how">How it works</a>
-        <a href="#builder">Builder</a>
+        <a href="#memo">Memo</a>
+        <a href="#method">Method</a>
       </nav>
     </header>
 
     <main id="top">
       <section class="hero">
         <div>
-          <p class="eyebrow accent">Live tool</p>
-          <h1>Turn a grant idea into a board-ready decision memo.</h1>
-          <p class="lede">
-            Paste an applicant, proposal, and foundation strategy. The tool
-            restates the claim in one sentence, then returns a first-pass signal
-            score, review route, board line, evidence, funder risks, and next
-            actions. It is built for staff triage before a human grantmaker
-            makes the call.
-          </p>
+          <p class="eyebrow accent">One decision</p>
+          <h1>Should this proposal advance to real diligence?</h1>
+          <p class="lede">Read the proposal against the applicant’s latest public filing and your foundation’s stated criteria. The result separates checkable evidence, filing gaps, strategy fit, and questions that still require a program officer.</p>
           <div class="hero-actions">
             <a class="button" href="#review">Run a review</a>
-            <button class="button ghost" id="sample-button" type="button">
-              Load sample review
-            </button>
+            <button class="button ghost" id="sample-button" type="button">View fictional sample memo</button>
           </div>
-          <p class="sample-note">
-            Calder Ridge is a fictional composite organization created for this
-            demonstration. Any resemblance to a real nonprofit is coincidental.
-          </p>
         </div>
-        <aside class="hero-card review-output-card" aria-label="Review output">
-          <div>
-            <span>First</span>
-            <strong>The claim</strong>
-            <small>One sentence naming what is being proposed.</small>
-          </div>
-          <div>
-            <span>Then</span>
-            <strong>Evidence and risks</strong>
-            <small>The visible case for and against advancing.</small>
-          </div>
-          <div>
-            <span>Finally</span>
-            <strong>Next diligence</strong>
-            <small>Specific requests staff can send the same day.</small>
-          </div>
+        <aside class="decision-card" aria-label="Review sequence">
+          <div><span>1</span><strong>Proposal claim</strong><small>Exact sentence, never a polished paraphrase.</small></div>
+          <div><span>2</span><strong>Filed evidence</strong><small>Named line, tax year, and filing lag.</small></div>
+          <div><span>3</span><strong>Human question</strong><small>Divergence becomes diligence, not an accusation.</small></div>
         </aside>
       </section>
 
       <section class="workspace" id="review">
         <form class="input-panel" id="review-form">
-          <div class="panel-heading">
-            <p class="eyebrow">Grant context</p>
-            <span id="readiness">Ready for review</span>
+          <div class="panel-heading"><p class="eyebrow">Review inputs</p><span id="readiness">Needs source material</span></div>
+
+          <div class="field-grid">
+            <label>Applicant legal name<input id="applicant-name" name="applicantName" maxlength="240" required /></label>
+            <label>EIN <span class="required-note">required</span><input id="ein" name="ein" inputmode="numeric" placeholder="12-3456789" pattern="\d{2}-?\d{7}" required /></label>
           </div>
 
-          <label>
-            Applicant
-            <textarea
-              id="applicant"
-              rows="5"
-              maxlength="5000"
-              placeholder="Paste public or non-confidential applicant context."
-              required
-            ></textarea>
+          <label>Filing relationship
+            <select id="filing-context" name="filingContext">
+              <option value="standalone">Applicant files its own return</option>
+              <option value="fiscal_sponsor">Applicant uses a fiscal sponsor</option>
+              <option value="group_return">Applicant is included in a group return</option>
+              <option value="990_n">Applicant files Form 990-N</option>
+            </select>
+          </label>
+          <label id="sponsor-field" hidden>Fiscal sponsor name<input id="fiscal-sponsor-name" name="fiscalSponsorName" maxlength="240" /></label>
+
+          <label>Proposal
+            <textarea id="proposal" name="proposal" rows="10" maxlength="40000" placeholder="Paste the proposal’s decision-relevant text, or upload it below."></textarea>
+          </label>
+          <label class="file-field">Or upload a proposal document
+            <input id="proposal-file" name="proposalFile" type="file" accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <small>TXT, Markdown, PDF, or DOCX. Maximum 6 MB.</small>
           </label>
 
-          <label>
-            Proposal
-            <textarea
-              id="proposal"
-              rows="7"
-              maxlength="7000"
-              placeholder="Paste the proposal summary, request amount, and visible claims."
-              required
-            ></textarea>
-          </label>
-
-          <label>
-            Foundation strategy
-            <textarea
-              id="foundationStrategy"
-              rows="6"
-              maxlength="5000"
-              placeholder="Paste the funder's priorities, guardrails, and decision criteria."
-              required
-            ></textarea>
+          <label>Foundation strategy and criteria
+            <textarea id="foundation-strategy" name="foundationStrategy" rows="8" maxlength="30000" placeholder="Paste priorities, eligibility rules, exclusions, and published grantmaking criteria." required></textarea>
           </label>
 
           <div class="form-actions">
-            <button class="button secondary" id="sample-inline-button" type="button">
-              Load sample review
-            </button>
-            <button class="button full" id="submit-button" type="submit">
-              Run grant signal review
-            </button>
+            <button class="button full" id="submit-button" type="submit">Generate diligence memo</button>
+            <button class="button ghost full" id="sample-inline-button" type="button">View fictional sample memo</button>
           </div>
-          <div
-            class="review-progress"
-            id="review-progress"
-            role="status"
-            aria-live="polite"
-            hidden
-          >
-            <div class="progress-copy">
-              <span id="progress-label">Reviewing grant context.</span>
-              <strong>Working</strong>
-            </div>
-            <div class="progress-track" aria-hidden="true">
-              <span></span>
-            </div>
+          <div class="review-progress" id="review-progress" role="status" aria-live="polite" hidden>
+            <div><span id="progress-label">Checking the filing and source text.</span><strong>Working</strong></div>
+            <div class="progress-track" aria-hidden="true"><span></span></div>
           </div>
           <p class="status-message" id="form-status" role="status"></p>
-          <p class="privacy-note">
-            Demonstration scope: do not paste confidential applicant information.
-            Public visitors cannot browse saved reviews. Pasted text is processed
-            by OpenAI and reviews are stored in the tool's database.
-          </p>
+          <p class="privacy-note"><strong>Stateless by design.</strong> This tool processes the submitted text and public filing data for this review, then returns the memo. It does not save applicant inputs or results.</p>
         </form>
 
-        <article class="analysis-panel" id="analysis">
-          <div class="claim-line" id="claim-section" hidden>
-            <p class="eyebrow">The claim</p>
-            <p id="claim"></p>
+        <article class="memo-panel" id="memo" aria-live="polite">
+          <div class="empty-state" id="empty-state">
+            <p class="eyebrow">Diligence memo</p>
+            <h2>Evidence before inference.</h2>
+            <p>Run a review or open the fictional sample. Each visible finding will carry a proposal quote, filing line, or foundation criterion.</p>
           </div>
+          <div id="memo-content" hidden>
+            <header class="memo-header">
+              <div><p class="eyebrow">Recommendation</p><p class="recommendation" id="recommendation"></p></div>
+              <p class="filing-badge" id="filing-badge"></p>
+            </header>
+            <p class="recommendation-reason" id="recommendation-reason"></p>
+            <section class="board-line"><p class="eyebrow">Board line</p><p id="board-line"></p></section>
+            <p class="boundary" id="human-boundary"></p>
 
-          <div class="score-row">
-            <div class="score-dial">
-              <span id="score">--</span>
-              <small>/100</small>
-            </div>
-            <div>
-              <p class="eyebrow">Recommended next step</p>
-              <h2 id="verdict">Run a review to generate a decision memo.</h2>
-              <p class="decision-label">
-                First-pass signal for staff triage. Not a decision, and not a
-                measure of the applicant.
-              </p>
-              <p class="score-explainer">
-                The score summarizes the balance of visible evidence against
-                funder risks, as a triage input to the route.
-              </p>
-              <p class="score-band" id="route">Model route pending</p>
-            </div>
-          </div>
-
-          <div class="board-line">
-            <p class="eyebrow">Board line</p>
-            <p id="board-line">
-              The board line will appear here after the API reviews the grant
-              context.
-            </p>
-          </div>
-
-          <div class="evidence-grid">
-            <section class="signal-list">
-              <h3>Strongest evidence</h3>
-              <ul id="strongest-evidence"></ul>
-            </section>
-            <section class="signal-list">
-              <h3>Funder risks</h3>
-              <ul id="funder-risks"></ul>
-            </section>
-            <section class="signal-list">
-              <h3>Next actions</h3>
-              <ul id="next-actions"></ul>
-            </section>
+            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 1</p><h2>Claim versus filing</h2></div><p>Each gap includes the filing lag.</p></div><div class="card-stack" id="claim-checks"></div></section>
+            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 2</p><h2>Financial diligence questions</h2></div><p>Inputs remain visible. No standalone risk score.</p></div><div class="card-stack" id="financial-signals"></div></section>
+            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 3</p><h2>Fit against stated strategy</h2></div></div><div class="card-stack" id="strategy-findings"></div></section>
+            <section class="memo-section route-section"><p class="eyebrow">Review route</p><h2 id="review-route"></h2><p id="review-route-why"></p><div class="source-list" id="route-sources"></div></section>
+            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">What staff still must do</p><h2>Next diligence actions</h2></div></div><ol class="action-list" id="next-actions"></ol></section>
+            <section class="safeguard-notice" id="safeguard-notice" hidden><strong>Source safeguard triggered</strong><p id="safeguard-copy"></p></section>
           </div>
         </article>
       </section>
 
-      <section class="first-pass-section" id="first-pass">
-        <div>
-          <p class="eyebrow accent">Review discipline</p>
-          <h2>The six-question first pass</h2>
-          <p>Every review answers the six questions of a disciplined first pass.</p>
-        </div>
-        <div class="first-pass-list">
-          <ol>
-            <li>
-              What is the claim? Answered by <strong>The claim</strong>, one
-              sentence: what change, for whom, by when, for how much.
-            </li>
-            <li>
-              What evidence is visible? Answered by
-              <strong>Strongest evidence</strong>: what is demonstrated rather
-              than asserted.
-            </li>
-            <li>
-              What would make the claim stronger? Answered inside
-              <strong>Next actions</strong>: every request names the missing
-              artifact, a baseline, a budget, a retention number, a named
-              accountable person.
-            </li>
-            <li>
-              What would trustees ask? Answered by
-              <strong>Funder risks</strong> and the <strong>Board line</strong>.
-            </li>
-            <li>
-              What should staff request next? Answered by
-              <strong>Next actions</strong>, written to send the same day.
-            </li>
-            <li>
-              High judgment or routine screen? Answered by the
-              <strong>Route</strong>, informed by the score.
-            </li>
-          </ol>
-          <p>
-            Questions 3 and 5 share an answer on purpose: a well-formed
-            diligence request names the thing that would strengthen the claim.
-          </p>
-        </div>
-      </section>
-
-      <section class="guardrail-section" id="guardrails">
-        <div>
-          <p class="eyebrow accent">Responsible AI guardrails</p>
-          <h2>What this tool will not do</h2>
-          <p>
-            This tool will not make the funding decision. That belongs to
-            people who are accountable for it.
-          </p>
-        </div>
-        <div class="guardrail-grid">
-          <article>
-            <h3>No mission judgment</h3>
-            <p>
-              It will not score an applicant's mission or worthiness. It reads
-              one proposal against one strategy and reports what the evidence
-              supports.
-            </p>
-          </article>
-          <article>
-            <h3>No program officer replacement</h3>
-            <p>
-              It will not replace a program officer's read of the people, the
-              relationships, or the context that never appears in a written
-              proposal.
-            </p>
-          </article>
-          <article>
-            <h3>No outside verification</h3>
-            <p>
-              It will not verify claims against outside sources. It reviews only
-              what you paste. A high score means the argument is well evidenced
-              as written, not that the facts have been checked.
-            </p>
-          </article>
-          <article>
-            <h3>What it will do</h3>
-            <p>
-              It will structure the evidence, name the risks that optimistic
-              language covers, and produce diligence questions a reviewer can
-              send the same day. It makes the reasoning behind a first pass
-              visible, so a human can defend the call to a board.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="how-section" id="how">
-        <div>
-          <p class="eyebrow accent">Why funders should care</p>
-          <h2>A grants manager should reduce false confidence.</h2>
-          <p>
-            Automating grantmaking is the wrong goal. This tool makes early
-            review judgment visible, testable, and easier to defend.
-          </p>
-          <p>
-            The model is asked for evidence, risks, and next actions, not a
-            summary and not praise. A grants platform should spend more
-            intelligence where judgment matters and less where the task is
-            repeatable.
-          </p>
-        </div>
-        <div class="api-grid">
-          <article>
-            <h3>Hard judgment</h3>
-            <span>Sol route</span>
-            <p>
-              Use the strongest model path for high-stakes review, contested
-              evidence, and board-facing recommendations.
-            </p>
-          </article>
-          <article>
-            <h3>Portfolio work</h3>
-            <span>Terra route</span>
-            <p>
-              Use balanced production review for everyday summaries,
-              comparisons, diligence questions, and staff workflows.
-            </p>
-          </article>
-          <article>
-            <h3>Volume screening</h3>
-            <span>Luna route</span>
-            <p>
-              Use fast screening for eligibility, missing fields, routing, and
-              duplicate intake triage.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="builder-section" id="builder">
-        <div>
-          <p class="eyebrow accent">Built by Wayan Vota</p>
-          <h2>Who built this</h2>
-          <p>
-            I'm Wayan Vota. I've spent three decades raising institutional
-            funding on both sides of the table, as a capture and proposal lead
-            winning more than $348 million from foundation, government, and
-            corporate funders across 20+ countries, and as a reviewer deciding
-            which proposals deserved it. I built this tool because the AI now
-            helping thousands of applicants write smoother proposals is erasing
-            the signal funders used to read in the writing itself. Review
-            judgment has to get sharper on the funder side, and this is what I
-            think that looks like.
-          </p>
-        </div>
-        <div class="builder-card">
-          <h3>Talk to me about AI grants management</h3>
-          <p>
-            If you run grantmaking operations and want to talk about it, find me
-            on LinkedIn.
-          </p>
-          <a class="button" href="https://www.linkedin.com/in/wayan/">
-            Contact Wayan on LinkedIn
-          </a>
+      <section class="method-section" id="method">
+        <div><p class="eyebrow accent">Method</p><h2>A filing is evidence with a date, not the present tense.</h2></div>
+        <div class="method-grid">
+          <article><strong>Claims stay claims</strong><p>Proposal language is quoted and classified before it is checked.</p></article>
+          <article><strong>Lag stays visible</strong><p>A current proposal can diverge legitimately from an older return. The memo shows both.</p></article>
+          <article><strong>People retain authority</strong><p>The tool routes diligence. It does not assess mission quality or make an award decision.</p></article>
         </div>
       </section>
     </main>

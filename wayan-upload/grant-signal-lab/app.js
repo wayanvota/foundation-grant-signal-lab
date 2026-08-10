@@ -1,246 +1,190 @@
 const config = window.GRANT_SIGNAL_CONFIG || {};
 const apiBaseUrl = (config.apiBaseUrl || "").replace(/\/$/, "");
-const healthRetryLimit = 3;
 
-const examples = {
-  applicant:
-    "Calder Ridge Community Health Partners is a 14-year-old nonprofit serving three counties in the rural Southeast, operating six community health clinics with a $9.2M annual budget and 84 staff. Roughly 60 percent of revenue comes from Medicaid reimbursement, the rest from state contracts and foundation grants. The organization has a stable leadership team, clean audits for the past five years, and a strong reputation with county health departments. It has no in-house technology staff. Its last major grant-funded technology project, a 2022 telehealth expansion, ended when the funding did.",
-  proposal:
-    "Calder Ridge requests $450,000 over 24 months to launch an AI-powered patient navigation assistant across its six clinics. The tool, built on a commercial large language model platform through a technology vendor, will answer patient questions, guide appointment scheduling, and reduce front-desk workload so staff can focus on complex cases. The proposal projects that the assistant will handle 70 percent of routine inquiries by month 12, improve patient satisfaction, and position Calder Ridge as a regional leader in equitable AI adoption. Year one covers vendor licensing, integration, and training. Year two covers expansion to Spanish-language support and a community advisory board. The proposal states that efficiency gains will allow the program to sustain itself after the grant period.",
-  foundationStrategy:
-    "We are a regional health foundation making $18M in annual grants, focused on access to care in underserved rural communities. Our board has approved a technology funding pillar but has asked staff to distinguish durable capability from pilot projects that disappear when our money does. We prioritize evidence of outcomes over adoption metrics, require a credible sustainability plan for anything above $250,000, and our trustees have raised concerns about AI tools handling patient communication in low-income communities. Risk posture: moderate. We will fund earlier-stage work when the learning is designed to be captured and shared.",
-};
+const fields = Object.fromEntries([
+  "review-form", "applicant-name", "ein", "filing-context", "sponsor-field", "fiscal-sponsor-name",
+  "proposal", "proposal-file", "foundation-strategy", "submit-button", "sample-button", "sample-inline-button",
+  "form-status", "review-progress", "progress-label", "readiness", "empty-state", "memo-content",
+  "recommendation", "recommendation-reason", "filing-badge", "board-line", "human-boundary", "claim-checks",
+  "financial-signals", "strategy-findings", "review-route", "review-route-why", "route-sources", "next-actions",
+  "safeguard-notice", "safeguard-copy",
+].map((id) => [id, document.querySelector(`#${id}`)]));
 
-const sampleReview = {
-  id: "calder-ridge-sample",
-  claim:
-    "Calder Ridge claims a $450,000 AI patient-navigation assistant will handle 70 percent of routine inquiries across six clinics within 12 months and sustain itself after the grant ends.",
-  score: 41,
-  route: "Sol",
-  routeDisplay:
-    "Hard judgment. Board-facing decision, contested evidence, vulnerable population. This review should not be resolved at the screening tier.",
-  verdict:
-    "Do not invite a full proposal in current form. The applicant is credible; the proposal is not yet. Return with specific revision requests before a site visit.",
-  boardLine:
-    "Calder Ridge is a strong access-to-care operator with a weak technology track record asking us to fund a vendor-dependent AI pilot. The proposal measures adoption, not health outcomes, and its sustainability plan is an assertion, not a budget. Staff recommend a structured revision request rather than a decline: the underlying need is real and inside our strategy.",
-  strongestEvidence: [
-    "Fourteen years of stable operation and clean audits.",
-    "Established trust with county health departments, which most technology pilots in this region lack.",
-    "The request sits squarely inside the foundation's rural access strategy.",
-    "Spanish-language expansion and a community advisory board show awareness of the equity concern, even if neither is yet designed.",
+const sampleMemo = {
+  recommendation: "HOLD FOR DILIGENCE",
+  recommendationReason: "The proposal fits the stated program area, but its current scale and financial assumptions need reconciliation with the latest filing before full diligence.",
+  boardLine: "The proposal addresses the foundation’s stated youth learning priority, while the claimed operating scale is materially above the latest filed revenue and requires current financial evidence before the request advances.",
+  filingSource: { taxYear: 2024, filingLagYears: 2, sourceUrl: "", provider: "Public filing sample" },
+  humanReviewBoundary: "This fictional memo demonstrates a first pass. It does not make a funding decision. Proposal-to-filing divergence is a diligence question, not a finding of fault. Staff must verify current facts, context, relationships, and source gaps before acting.",
+  claimChecks: [
+    { status: "contradicted", claim: "The organization operates on an annual budget of $4.8 million.", proposalQuote: "Our current annual operating budget is $4.8 million.", filingLine: "Total revenue", filingValue: 2960000, taxYear: 2024, filingLagYears: 2, question: "What explains why the proposal figure of $4.8 million is materially above the 2024 total revenue of $2.96 million?" },
+    { status: "not_checkable", claim: "The program reaches families in five counties.", proposalQuote: "The program now reaches families in five counties.", filingLine: null, filingValue: null, taxYear: 2024, filingLagYears: 2, question: "What current evidence would substantiate this reach claim? The available filing does not contain a corresponding line." },
   ],
-  funderRisks: [
-    "The 70 percent inquiry-handling projection has no baseline behind it; current inquiry volume and staffing cost are never stated, so the efficiency claim cannot be checked.",
-    '"Efficiency gains will sustain the program" is the same claim that preceded the 2022 telehealth project, which ended with its funding.',
-    "The applicant has no technology staff, so the vendor owns the capability and the foundation would be funding a licensing relationship, not organizational capacity.",
-    "Patient-facing AI in a Medicaid population raises the exact concern this board has already flagged, and the proposal offers no error-handling, escalation, or monitoring design.",
-    "Success is defined by adoption and satisfaction, not by any health or access outcome the foundation's strategy names.",
+  financialSignals: [
+    { signal: "Revenue concentration", taxYear: 2024, inputs: [{ filingLine: "Contributions and grants", value: 2210000 }, { filingLine: "Total revenue", value: 2960000 }], question: "Contributions and grants represent about 75% of reported total revenue. How exposed is the applicant to a change in that source?" },
+    { signal: "Balance-sheet reserve proxy", taxYear: 2024, inputs: [{ filingLine: "Total assets, end of year", value: 950000 }, { filingLine: "Total liabilities, end of year", value: 280000 }, { filingLine: "Total functional expenses", value: 2840000 }], question: "Net assets equal about 2.8 months of annual expenses. What portion was liquid and available for operations?" },
   ],
+  strategyFindings: [
+    { status: "aligned", finding: "The proposed work addresses the stated program priority.", criterionQuote: "We support evidence-based youth learning programs in rural counties.", proposalQuote: "We will expand evidence-based tutoring for rural middle-school students.", diligenceQuestion: "Which outcome evidence is comparable across the proposed counties?" },
+    { status: "unclear", finding: "The proposal does not establish the required plan for sustaining requests above the threshold.", criterionQuote: "Requests above $300,000 require a documented two-year sustainability plan.", proposalQuote: "", diligenceQuestion: "Where is the required two-year sustainability plan and who owns each future revenue commitment?" },
+  ],
+  reviewRoute: { route: "ELIGIBILITY CHECK", why: "Program fit is visible, but a mandatory sustainability criterion remains unresolved.", sources: [{ sourceType: "foundation_criterion", sourceQuote: "Requests above $300,000 require a documented two-year sustainability plan." }] },
   nextActions: [
-    "Request current inquiry volume, front-desk staffing costs, and the calculation behind the 70 percent projection.",
-    "Ask what happens to a patient when the assistant is wrong, and who reviews its answers.",
-    "Require a sustainability budget with named revenue sources, not projected efficiencies.",
-    "Ask the vendor's other nonprofit clients for retention data after grant funding ended.",
-    "Ask what Calder Ridge would build first if the grant were $150,000 instead of $450,000; the answer will reveal whether this is their plan or the vendor's.",
+    { question: "Request current year-to-date financials and the board-approved operating budget.", basis: "The proposal’s budget claim diverges from the latest filed total revenue.", source: { sourceType: "filing", sourceQuote: "2024 Total revenue" } },
+    { question: "Obtain the required two-year sustainability plan.", basis: "A mandatory foundation criterion is not evidenced in the proposal.", source: { sourceType: "foundation_criterion", sourceQuote: "Requests above $300,000 require a documented two-year sustainability plan." } },
   ],
+  safeguard: { status: "passed", strippedSpanCount: 0 },
 };
 
-const fields = {
-  applicant: document.querySelector("#applicant"),
-  proposal: document.querySelector("#proposal"),
-  foundationStrategy: document.querySelector("#foundationStrategy"),
-  form: document.querySelector("#review-form"),
-  sampleButton: document.querySelector("#sample-button"),
-  sampleInlineButton: document.querySelector("#sample-inline-button"),
-  submitButton: document.querySelector("#submit-button"),
-  status: document.querySelector("#form-status"),
-  progress: document.querySelector("#review-progress"),
-  progressLabel: document.querySelector("#progress-label"),
-  readiness: document.querySelector("#readiness"),
-  claimSection: document.querySelector("#claim-section"),
-  claim: document.querySelector("#claim"),
-  score: document.querySelector("#score"),
-  route: document.querySelector("#route"),
-  verdict: document.querySelector("#verdict"),
-  boardLine: document.querySelector("#board-line"),
-  evidence: document.querySelector("#strongest-evidence"),
-  risks: document.querySelector("#funder-risks"),
-  actions: document.querySelector("#next-actions"),
-};
-
+fields["review-form"].addEventListener("submit", runReview);
+fields["filing-context"].addEventListener("change", updateFilingContext);
+for (const id of ["applicant-name", "ein", "proposal", "foundation-strategy"]) fields[id].addEventListener("input", updateReadiness);
+fields["proposal-file"].addEventListener("change", updateReadiness);
+for (const id of ["sample-button", "sample-inline-button"]) fields[id].addEventListener("click", showSample);
+updateFilingContext();
 updateReadiness();
 warmBackend();
 
-fields.form.addEventListener("submit", async (event) => {
+async function runReview(event) {
   event.preventDefault();
-  await runReview();
-});
-
-for (const button of [fields.sampleButton, fields.sampleInlineButton]) {
-  button.addEventListener("click", loadSampleReview);
-}
-
-for (const field of [fields.applicant, fields.proposal, fields.foundationStrategy]) {
-  field.addEventListener("input", updateReadiness);
-}
-
-async function loadSampleReview() {
-  fields.applicant.value = examples.applicant;
-  fields.proposal.value = examples.proposal;
-  fields.foundationStrategy.value = examples.foundationStrategy;
-  updateReadiness();
-  renderReview(sampleReview);
-  setStatus("Loaded stored sample review. No API call needed.", false);
-  document.querySelector("#analysis").scrollIntoView({ behavior: "smooth" });
-}
-
-async function runReview({ source = "manual" } = {}) {
-  if (!apiBaseUrl) {
-    setStatus("Set apiBaseUrl in config.js before running reviews.", true);
-    return;
-  }
-
-  fields.submitButton.disabled = true;
-  fields.sampleButton.disabled = true;
-  fields.sampleInlineButton.disabled = true;
-  fields.submitButton.textContent = "Reviewing...";
-  setReviewProgress(
-    true,
-    "Reviewing grant context. The first run can take longer while the review engine wakes.",
-  );
-  setStatus("", false);
-
-  const progressTimer = window.setTimeout(() => {
-    setReviewProgress(
-      true,
-      "Still working. The review engine is reading the proposal and drafting the memo.",
-    );
-  }, 6500);
-
+  if (!apiBaseUrl) return setStatus("The review service is not configured.", true);
+  setRunning(true);
+  const timer = window.setTimeout(() => setProgress("Still working. The filing and source checks may take a minute."), 9000);
   try {
-    const response = await fetch(`${apiBaseUrl}/api/reviews`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        applicant: fields.applicant.value,
-        proposal: fields.proposal.value,
-        foundationStrategy: fields.foundationStrategy.value,
-      }),
-    });
-
+    const formData = new FormData(fields["review-form"]);
+    if (!fields["proposal-file"].files.length) formData.delete("proposalFile");
+    const response = await fetch(`${apiBaseUrl}/api/reviews`, { method: "POST", body: formData });
     const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Review failed.");
-    }
-
-    renderReview(data);
-    setStatus("Review saved. Public visitors cannot browse saved reviews.", false);
+    if (!response.ok) throw new Error(data.error || "The review could not be completed.");
+    renderMemo(data);
+    setStatus("Memo complete. Inputs and results were not saved.", false);
   } catch (error) {
-    setStatus(error.message || "Review failed.", true);
+    setStatus(error.message || "The review could not be completed.", true);
   } finally {
-    window.clearTimeout(progressTimer);
-    setReviewProgress(false);
-    fields.submitButton.disabled = false;
-    fields.sampleButton.disabled = false;
-    fields.sampleInlineButton.disabled = false;
-    fields.submitButton.textContent = "Run grant signal review";
+    clearTimeout(timer);
+    setRunning(false);
   }
 }
 
-async function warmBackend(attempt = 0) {
-  if (!apiBaseUrl) {
-    return;
-  }
-
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 22000);
-
-  try {
-    await fetch(`${apiBaseUrl}/health`, { signal: controller.signal });
-  } catch {
-    if (attempt < healthRetryLimit) {
-      window.setTimeout(() => warmBackend(attempt + 1), 3500);
-    }
-  } finally {
-    window.clearTimeout(timeout);
-  }
+function showSample() {
+  renderMemo(sampleMemo);
+  setStatus("Opened a fictional stored fixture. No applicant data was submitted.", false);
+  fields["memo-content"].scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function renderReview(review) {
-  renderClaim(review.claim);
-  fields.score.textContent = Number(review.score).toFixed(0);
-  fields.route.textContent =
-    review.routeDisplay ||
-    `${routeLabel(review.route)} · ${review.route} route · ${scoreBand(review.score)}`;
-  fields.verdict.textContent = review.verdict;
-  fields.boardLine.textContent = review.boardLine;
-  renderList(fields.evidence, review.strongestEvidence);
-  renderList(fields.risks, review.funderRisks || review.donorRisks);
-  renderList(fields.actions, review.nextActions);
+function renderMemo(memo) {
+  fields["empty-state"].hidden = true;
+  fields["memo-content"].hidden = false;
+  fields.recommendation.textContent = memo.recommendation;
+  fields["recommendation-reason"].textContent = memo.recommendationReason;
+  fields["board-line"].textContent = memo.boardLine;
+  fields["human-boundary"].textContent = memo.humanReviewBoundary;
+  fields["filing-badge"].textContent = memo.filingSource?.taxYear
+    ? `Filing year ${memo.filingSource.taxYear} · ${memo.filingSource.filingLagYears}-year lag`
+    : "Filing evidence unavailable";
+  renderClaimChecks(memo.claimChecks || []);
+  renderFinancialSignals(memo.financialSignals || []);
+  renderStrategyFindings(memo.strategyFindings || []);
+  fields["review-route"].textContent = memo.reviewRoute?.route || "Human review";
+  fields["review-route-why"].textContent = memo.reviewRoute?.why || memo.recommendationReason;
+  renderSources(fields["route-sources"], memo.reviewRoute?.sources || []);
+  renderActions(memo.nextActions || []);
+  const triggered = memo.safeguard?.status === "human_check_required";
+  fields["safeguard-notice"].hidden = !triggered;
+  fields["safeguard-copy"].textContent = triggered ? `${memo.safeguard.strippedSpanCount} embedded model-control span${memo.safeguard.strippedSpanCount === 1 ? " was" : "s were"} removed. Inspect the source before relying on this memo.` : "";
 }
 
-function setReviewProgress(isRunning, message = "") {
-  fields.progress.hidden = !isRunning;
-  if (message) {
-    fields.progressLabel.textContent = message;
-  }
-}
-
-function renderClaim(claim) {
-  const value = typeof claim === "string" ? claim.trim() : "";
-  fields.claimSection.hidden = !value;
-  fields.claim.textContent = value;
-}
-
-function renderList(element, items = []) {
-  element.innerHTML = "";
+function renderClaimChecks(items) {
+  clear(fields["claim-checks"]);
+  if (!items.length) return appendEmpty(fields["claim-checks"], "No claim comparison is available for this human-check result.");
   for (const item of items) {
-    const li = document.createElement("li");
-    li.textContent = item;
-    element.append(li);
+    const card = element("article", "evidence-card");
+    card.append(tag(item.status.replace("_", " "), `status-tag ${item.status}`));
+    card.append(textElement("h3", item.claim));
+    card.append(sourceBlock("Proposal", item.proposalQuote));
+    if (item.filingLine) card.append(sourceBlock(`Form 990 · ${item.taxYear} · ${item.filingLine}`, formatValue(item.filingValue)));
+    card.append(textElement("p", `${item.question} Filing lag: ${item.filingLagYears} year${item.filingLagYears === 1 ? "" : "s"}.`, "question"));
+    fields["claim-checks"].append(card);
   }
+}
+
+function renderFinancialSignals(items) {
+  clear(fields["financial-signals"]);
+  if (!items.length) return appendEmpty(fields["financial-signals"], "Financial ratios were withheld for this human-check result.");
+  for (const item of items) {
+    const card = element("article", "evidence-card");
+    card.append(textElement("p", `Tax year ${item.taxYear}`, "eyebrow"), textElement("h3", item.signal));
+    const inputs = element("div", "input-chips");
+    for (const input of item.inputs || []) inputs.append(tag(`${input.filingLine}: ${formatValue(input.value)}`, "input-chip"));
+    if (inputs.childElementCount) card.append(inputs);
+    card.append(textElement("p", item.question, "question"));
+    fields["financial-signals"].append(card);
+  }
+}
+
+function renderStrategyFindings(items) {
+  clear(fields["strategy-findings"]);
+  if (!items.length) return appendEmpty(fields["strategy-findings"], "Strategy fit was withheld for this human-check result.");
+  for (const item of items) {
+    const card = element("article", "evidence-card");
+    card.append(tag(item.status, `status-tag ${item.status}`), textElement("h3", item.finding));
+    card.append(sourceBlock("Foundation criterion", item.criterionQuote));
+    if (item.proposalQuote) card.append(sourceBlock("Proposal", item.proposalQuote));
+    card.append(textElement("p", item.diligenceQuestion, "question"));
+    fields["strategy-findings"].append(card);
+  }
+}
+
+function renderActions(items) {
+  clear(fields["next-actions"]);
+  for (const item of items) {
+    const li = element("li");
+    li.append(textElement("strong", item.question), textElement("p", item.basis));
+    if (item.source) li.append(sourceBlock(sourceLabel(item.source.sourceType), item.source.sourceQuote));
+    fields["next-actions"].append(li);
+  }
+}
+
+function renderSources(container, sources) {
+  clear(container);
+  for (const source of sources) container.append(sourceBlock(sourceLabel(source.sourceType), source.sourceQuote));
+}
+
+function updateFilingContext() {
+  const sponsored = fields["filing-context"].value === "fiscal_sponsor";
+  fields["sponsor-field"].hidden = !sponsored;
+  fields["fiscal-sponsor-name"].required = sponsored;
 }
 
 function updateReadiness() {
-  const length = [
-    fields.applicant.value,
-    fields.proposal.value,
-    fields.foundationStrategy.value,
-  ].join(" ").length;
-
-  fields.readiness.textContent =
-    length > 700
-      ? "Board-ready context"
-      : length > 360
-        ? "Enough for first-pass review"
-        : "Needs more context";
+  const complete = fields["applicant-name"].value.trim().length > 1
+    && /^\d{2}-?\d{7}$/.test(fields.ein.value.trim())
+    && (fields.proposal.value.trim().length >= 80 || fields["proposal-file"].files.length > 0)
+    && fields["foundation-strategy"].value.trim().length >= 80;
+  fields.readiness.textContent = complete ? "Ready for filing check" : "Needs source material";
 }
 
-function setStatus(message, isError) {
-  fields.status.textContent = message;
-  fields.status.classList.toggle("error", Boolean(isError));
+function setRunning(running) {
+  fields["submit-button"].disabled = running;
+  fields["sample-button"].disabled = running;
+  fields["sample-inline-button"].disabled = running;
+  fields["submit-button"].textContent = running ? "Generating memo…" : "Generate diligence memo";
+  fields["review-progress"].hidden = !running;
+  if (running) setProgress("Checking the filing and source text.");
 }
 
-function scoreBand(score) {
-  const value = Number(score);
-  if (value >= 82) return "High signal";
-  if (value >= 68) return "Promising";
-  if (value >= 50) return "Needs diligence";
-  return "Weak fit";
-}
+function setProgress(message) { fields["progress-label"].textContent = message; }
+function setStatus(message, error) { fields["form-status"].textContent = message; fields["form-status"].classList.toggle("error", Boolean(error)); }
+function clear(node) { node.replaceChildren(); }
+function element(name, className = "") { const node = document.createElement(name); if (className) node.className = className; return node; }
+function textElement(name, text, className = "") { const node = element(name, className); node.textContent = text || ""; return node; }
+function tag(text, className) { return textElement("span", text, className); }
+function sourceBlock(label, quote) { const node = element("div", "source-block"); node.append(textElement("span", label), textElement("q", quote)); return node; }
+function appendEmpty(node, text) { node.append(textElement("p", text, "empty-copy")); }
+function sourceLabel(value) { return value === "foundation_criterion" ? "Foundation criterion" : value === "filing" ? "Filing" : "Proposal"; }
+function formatValue(value) { return typeof value === "number" ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value) : String(value ?? "Not available"); }
 
-function routeLabel(route) {
-  if (route === "Sol") return "Hard judgment";
-  if (route === "Terra") return "Portfolio work";
-  if (route === "Luna") return "Volume screening";
-  return "Review route";
-}
-
-function escapeHtml(value = "") {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+async function warmBackend(attempt = 0) {
+  if (!apiBaseUrl) return;
+  try { await fetch(`${apiBaseUrl}/health`); } catch { if (attempt < 2) window.setTimeout(() => warmBackend(attempt + 1), 3500); }
 }
