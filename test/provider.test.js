@@ -46,6 +46,7 @@ function response(payload) {
 
 function validReview() {
   return {
+    sourceQuality: { status: "ANALYZABLE", explanation: "The proposal contains a reviewable request, budget, program scale, and delivery context." },
     summaryClaim: "The applicant seeks support for regional tutoring.",
     claims: [{ claim: "Annual budget is $5 million.", proposalQuote, category: "annual_budget", value: 5_000_000, unit: "usd" }],
     strategyFindings: [{ status: "aligned", finding: "The program area aligns.", criterionQuote, proposalQuote, diligenceQuestion: "What outcome evidence supports the planned expansion?" }],
