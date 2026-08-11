@@ -110,6 +110,6 @@ The current suite covers filing exceptions, claim comparison, financial input vi
 
 `POST /api/reviews` accepts JSON or multipart form data and returns the memo directly. It does not create or save a review record.
 
-## Release restriction
+## Release verification
 
-The v2 work is prepared on `codex/foundation-grant-signal-lab-v2`. Do not merge it to `main` before August 14, 2026.
+The API and the public `wayan.com` frontend are separate deployment targets. Verify the stateless API metadata first, then publish `wayan-upload/grant-signal-lab/` to the Apache host and verify the public page independently.
