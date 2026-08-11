@@ -3,6 +3,7 @@ import { inspectAndStripInjection, containsInjection } from "../src/inputSafegua
 import { fetchIrs990, assessFilingUsability, FILING_REVIEW_STATES } from "../src/irs990.js";
 import { compareClaimsToFiling, calculateFinancialSignals } from "../src/filingAnalysis.js";
 import { runValidatedReview } from "../src/provider.js";
+import { assessApplicantIdentity, assessProposalQuality } from "../src/inputQuality.js";
 
 export { reviewInputSchema };
 
@@ -46,6 +47,20 @@ export async function generateGrantReview(input, {
     });
   }
 
+  const identityAssessment = assessApplicantIdentity(
+    safeguarded.values.applicantName,
+    irsRecord.organization?.name,
+  );
+  if (!identityAssessment.ready) {
+    return terminalMemo({
+      input: safeguarded.values,
+      irsRecord,
+      reasonCode: "applicant_identity_mismatch",
+      explanation: identityAssessment.reason,
+      safeguard: safeguarded,
+    });
+  }
+
   const providerResponse = await runProvider({
     input: safeguarded.values,
     filingSummary: publicFilingSummary(irsRecord),
@@ -63,6 +78,16 @@ export async function generateGrantReview(input, {
   }
 
   const modelReview = providerResponse.result;
+  if (modelReview.sourceQuality?.status === "INSUFFICIENT") {
+    return terminalMemo({
+      input: safeguarded.values,
+      irsRecord,
+      reasonCode: "insufficient_decision_content",
+      explanation: modelReview.sourceQuality.explanation,
+      safeguard: safeguarded,
+      providerAttempts: providerResponse.attempts,
+    });
+  }
   const memo = {
     recommendation: modelReview.recommendation,
     recommendationReason: modelReview.recommendationReason,
@@ -82,6 +107,7 @@ export async function generateGrantReview(input, {
     nextActions: appendFilingActions(modelReview.nextActions, irsRecord),
     humanReviewBoundary: humanCheckBoundary(),
     safeguard: safeguardSummary(safeguarded, providerResponse.attempts),
+    sourceQuality: modelReview.sourceQuality,
   };
 
   if (safeguarded.strippedSpans.length) {
@@ -94,10 +120,14 @@ export async function generateGrantReview(input, {
 }
 
 export function prepareInputs(input) {
-  const inspected = [
+  const inspectionTargets = [
+    ["applicantName", input.applicantName, 2],
     ["proposal", input.proposal, 80],
     ["foundationStrategy", input.foundationStrategy, 80],
-  ].map(([source, text, minimum]) => ({
+  ];
+  if (input.fiscalSponsorName) inspectionTargets.push(["fiscalSponsorName", input.fiscalSponsorName, 2]);
+
+  const inspected = inspectionTargets.map(([source, text, minimum]) => ({
     source,
     minimum,
     ...inspectAndStripInjection(text, { source }),
@@ -136,6 +166,21 @@ export function prepareInputs(input) {
         }),
       };
     }
+  }
+
+  const qualityAssessment = assessProposalQuality(values.proposal);
+  if (!qualityAssessment.ready) {
+    return {
+      values,
+      strippedSpans,
+      operationLog,
+      terminalResult: terminalMemo({
+        input: values,
+        reasonCode: "insufficient_decision_content",
+        explanation: qualityAssessment.reason,
+        safeguard: { strippedSpans, operationLog },
+      }),
+    };
   }
 
   return { values, strippedSpans, operationLog };
@@ -231,6 +276,8 @@ function humanCheckAction(reasonCode, input) {
   if (reasonCode === FILING_REVIEW_STATES.LIMITED_990_N) return "Request current financial statements because Form 990-N provides no financial detail.";
   if (reasonCode === FILING_REVIEW_STATES.NO_FILED_RETURN) return "Confirm the applicant's filing status and obtain the latest reviewable financial statements.";
   if (reasonCode === "filing_lookup_failed") return "Retry the public filing lookup or review the applicant's latest return directly before proceeding.";
+  if (reasonCode === "applicant_identity_mismatch") return "Confirm the applicant's exact legal name and EIN before relying on the returned filing.";
+  if (reasonCode === "insufficient_decision_content") return "Replace placeholder or incoherent text with the decision-relevant proposal narrative before running another review.";
   return "Review the source material manually and document why automated review could not be relied upon.";
 }
 

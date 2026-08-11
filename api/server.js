@@ -6,16 +6,24 @@ import multer from "multer";
 import { generateGrantReview, reviewInputSchema } from "./review.js";
 import { extractProposalText } from "./proposalFile.js";
 
-const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || "https://wayan.com,https://www.wayan.com")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 const reviewLimitWindowMs = Number.parseInt(process.env.REVIEW_RATE_LIMIT_WINDOW_MS || "600000", 10);
 const reviewLimitMax = Number.parseInt(process.env.REVIEW_RATE_LIMIT_MAX || "8", 10);
 const reviewBuckets = new Map();
+let lastBucketPruneAt = 0;
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 6 * 1024 * 1024, files: 1 },
+  limits: {
+    fileSize: 6 * 1024 * 1024,
+    files: 1,
+    fields: 6,
+    parts: 7,
+    fieldNameSize: 100,
+    fieldSize: 64 * 1024,
+  },
 });
 
 export function createApp({ generateReview = generateGrantReview } = {}) {
@@ -28,7 +36,11 @@ export function createApp({ generateReview = generateGrantReview } = {}) {
         callback(null, true);
         return;
       }
-      callback(new Error(`Origin not allowed: ${origin}`));
+      const error = new Error("Origin not allowed");
+      error.code = "CORS_NOT_ALLOWED";
+      error.statusCode = 403;
+      error.publicMessage = "This origin is not allowed to use the review API.";
+      callback(error);
     },
   }));
 
@@ -87,11 +99,27 @@ export function createApp({ generateReview = generateGrantReview } = {}) {
 
   app.use((error, _request, response, next) => {
     if (error instanceof multer.MulterError) {
-      response.status(400).json({ error: error.code === "LIMIT_FILE_SIZE" ? "The proposal file must be 6 MB or smaller." : error.message });
+      const messages = {
+        LIMIT_FILE_SIZE: "The proposal file must be 6 MB or smaller.",
+        LIMIT_FILE_COUNT: "Upload only one proposal file.",
+        LIMIT_FIELD_COUNT: "The review form contains too many fields.",
+        LIMIT_PART_COUNT: "The review form contains too many parts.",
+        LIMIT_FIELD_KEY: "A review form field name is too long.",
+        LIMIT_FIELD_VALUE: "A review form field is too large.",
+      };
+      response.status(400).json({ error: messages[error.code] || "The uploaded review form could not be read." });
+      return;
+    }
+    if (error?.type === "entity.too.large") {
+      response.status(413).json({ error: "The JSON request body must be 120 KB or smaller." });
+      return;
+    }
+    if (error?.type === "entity.parse.failed") {
+      response.status(400).json({ error: "The request body is not valid JSON." });
       return;
     }
     if (error) {
-      response.status(400).json({ error: error.message || "The request could not be read." });
+      response.status(error.statusCode || 400).json({ error: error.publicMessage || "The request could not be read." });
       return;
     }
     next();
@@ -116,6 +144,7 @@ function reviewRateLimit(request, response, next) {
   const now = Date.now();
   const windowMs = Number.isFinite(reviewLimitWindowMs) ? reviewLimitWindowMs : 600_000;
   const max = Number.isFinite(reviewLimitMax) ? reviewLimitMax : 8;
+  pruneReviewBuckets(now);
   const key = request.ip || request.get("x-forwarded-for") || "unknown";
   const bucket = reviewBuckets.get(key) || { count: 0, resetAt: now + windowMs };
   if (now > bucket.resetAt) {
@@ -130,6 +159,14 @@ function reviewRateLimit(request, response, next) {
     return;
   }
   next();
+}
+
+function pruneReviewBuckets(now) {
+  if (now - lastBucketPruneAt < 60_000 && reviewBuckets.size < 1_000) return;
+  for (const [key, bucket] of reviewBuckets) {
+    if (now > bucket.resetAt) reviewBuckets.delete(key);
+  }
+  lastBucketPruneAt = now;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) startServer();

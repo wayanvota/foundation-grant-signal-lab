@@ -102,6 +102,8 @@ npm run build:frontend
 
 The current suite covers filing exceptions, claim comparison, financial input visibility, prompt injection handling, provider retries, fixture privacy, and publication constraints.
 
+The adversarial matrix adds source-quality stops, legal-name/EIN identity checks, Unicode and zero-width prompt obfuscation, role tags, encoded commands, prompt extraction, literal XSS and SQL strings, malformed and oversized requests, hostile origins, excessive multipart fields, unsupported uploads, multilingual proposals, complex claims, and explicit eligibility conflicts. Run deterministic coverage with `npm test` and paid end-to-end provider coverage with `npm run test:adversarial:live`.
+
 ## API
 
 `GET /health` reports service readiness and the stateless storage policy.

@@ -73,6 +73,7 @@ function validModelReview(proposal) {
   const quote = "Our annual operating budget is $5 million.";
   assert.match(proposal, /Our annual operating budget/);
   return {
+    sourceQuality: { status: "ANALYZABLE", explanation: "The proposal contains a reviewable request, budget, program scale, and delivery context." },
     summaryClaim: "The applicant seeks support to expand regional tutoring programs.",
     claims: [{ claim: "Annual budget is $5 million.", proposalQuote: quote, category: "annual_budget", value: 5_000_000, unit: "usd" }],
     strategyFindings: [{ status: "aligned", finding: "The proposal addresses regional learning.", criterionQuote: "We support evidence-based regional learning programs.", proposalQuote: "We serve 6,000 students through regional tutoring programs and request support to expand.", diligenceQuestion: "What evidence shows learning outcomes?" }],

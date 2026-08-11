@@ -15,6 +15,7 @@
     "check": "node --check api/server.js && node --check api/review.js && node --check src/provider.js && node --check frontend/app.js && npm run check:forbidden",
     "check:forbidden": "node scripts/check-forbidden.mjs",
     "test": "node --test",
+    "test:adversarial:live": "node scripts/run-adversarial-live.mjs",
     "serve:frontend": "npx serve frontend -l 4173"
   },
   "dependencies": {

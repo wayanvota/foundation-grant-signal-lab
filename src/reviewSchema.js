@@ -60,10 +60,16 @@ const actionSchema = z.object({
   source: sourceSchema,
 }).strict();
 
+const sourceQualitySchema = z.object({
+  status: z.enum(["ANALYZABLE", "INSUFFICIENT"]),
+  explanation: z.string().min(1),
+}).strict();
+
 export const modelReviewSchema = z.object({
+  sourceQuality: sourceQualitySchema,
   summaryClaim: z.string().min(10),
-  claims: z.array(claimSchema).min(1).max(12),
-  strategyFindings: z.array(strategyFindingSchema).min(1).max(12),
+  claims: z.array(claimSchema).max(12),
+  strategyFindings: z.array(strategyFindingSchema).max(12),
   eligibilityBucket: z.enum([
     "MEETS STATED CRITERIA",
     "ELIGIBILITY UNCERTAIN",
@@ -75,15 +81,22 @@ export const modelReviewSchema = z.object({
   reviewRoute: z.object({
     route: z.enum(["FULL DILIGENCE", "ELIGIBILITY CHECK", "SPECIALIST REVIEW"]),
     why: z.string().min(1),
-    sources: z.array(sourceSchema).min(1).max(4),
+    sources: z.array(sourceSchema).max(4),
   }).strict(),
-  nextActions: z.array(actionSchema).min(2).max(8),
-}).strict();
+  nextActions: z.array(actionSchema).max(8),
+}).strict().superRefine((value, context) => {
+  if (value.sourceQuality.status !== "ANALYZABLE") return;
+  if (value.claims.length < 1) context.addIssue({ code: "custom", path: ["claims"], message: "Analyzable proposals require at least one sourced claim." });
+  if (value.strategyFindings.length < 1) context.addIssue({ code: "custom", path: ["strategyFindings"], message: "Analyzable proposals require at least one strategy finding." });
+  if (value.reviewRoute.sources.length < 1) context.addIssue({ code: "custom", path: ["reviewRoute", "sources"], message: "Analyzable proposals require a sourced review route." });
+  if (value.nextActions.length < 2) context.addIssue({ code: "custom", path: ["nextActions"], message: "Analyzable proposals require at least two sourced next actions." });
+});
 
 export const modelReviewJsonSchema = {
   type: "object",
   additionalProperties: false,
   required: [
+    "sourceQuality",
     "summaryClaim",
     "claims",
     "strategyFindings",
@@ -95,10 +108,19 @@ export const modelReviewJsonSchema = {
     "nextActions",
   ],
   properties: {
+    sourceQuality: {
+      type: "object",
+      additionalProperties: false,
+      required: ["status", "explanation"],
+      properties: {
+        status: { type: "string", enum: ["ANALYZABLE", "INSUFFICIENT"] },
+        explanation: { type: "string" },
+      },
+    },
     summaryClaim: { type: "string" },
     claims: {
       type: "array",
-      minItems: 1,
+      minItems: 0,
       maxItems: 12,
       items: {
         type: "object",
@@ -118,7 +140,7 @@ export const modelReviewJsonSchema = {
     },
     strategyFindings: {
       type: "array",
-      minItems: 1,
+      minItems: 0,
       maxItems: 12,
       items: {
         type: "object",
@@ -144,12 +166,12 @@ export const modelReviewJsonSchema = {
       properties: {
         route: { type: "string", enum: ["FULL DILIGENCE", "ELIGIBILITY CHECK", "SPECIALIST REVIEW"] },
         why: { type: "string" },
-        sources: { type: "array", minItems: 1, maxItems: 4, items: sourceJsonSchema() },
+        sources: { type: "array", minItems: 0, maxItems: 4, items: sourceJsonSchema() },
       },
     },
     nextActions: {
       type: "array",
-      minItems: 2,
+      minItems: 0,
       maxItems: 8,
       items: {
         type: "object",

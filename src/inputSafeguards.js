@@ -1,15 +1,27 @@
 const injectionPatterns = [
   /\b(?:ignore|disregard|forget|override)\b[^.!?\n]{0,240}\b(?:instructions?|prompt|system message|developer message)\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /\bi\s+g\s+n\s+o\s+r\s+e\b[^.!?\n]{0,240}\b(?:instructions?|prompt|system message|developer message)\b[^.!?\n]*(?:[.!?]|$)/gim,
   /\b(?:system|assistant|developer)\s*:\s*[^\n]+/gim,
+  /["']?role["']?\s*:\s*["']?(?:system|assistant|developer)\b[^}\n]*(?:}|$)/gim,
+  /<\s*\/?\s*(?:system|assistant|developer)\b[^>]*>/gim,
   /\b(?:return|respond with|output)\s+(?:only|exactly)\b[^.!?\n]{0,180}\b(?:advance|hold|decline|fund|score|rank|json|verdict|decision|recommendation)\b[^.!?\n]*(?:[.!?]|$)/gim,
   /\b(?:rank|score|rate|select|choose)\s+(?:us|me|this applicant|our (?:application|organization|proposal))\b[^.!?\n]*(?:[.!?]|$)/gim,
   /\b(?:mark|classify)\s+(?:us|me|this applicant|our (?:application|organization|proposal))\s+as\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /\b(?:act|pretend|behave)\s+as\b[^.!?\n]{0,180}\b(?:system|assistant|developer|administrator|(?:grant\s+)?decision\s+maker|grant\s+(?:reviewer|officer|maker))\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /\b(?:reveal|print|show|expose|repeat)\b[^.!?\n]{0,120}\b(?:hidden\s+)?(?:system|developer|original)\b[^.!?\n]{0,80}\b(?:prompt|instructions?|message)\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /\b(?:bypass|disable|circumvent|evade)\b[^.!?\n]{0,120}\b(?:safeguards?|guardrails?|filters?|validation|security|schema)\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /\b(?:new|highest[- ]priority|authoritative|replacement)\s+(?:system\s+|developer\s+)?instructions?\s*:[^\n]+/gim,
+  /\b(?:decode|interpret)\b[^.!?\n]{0,160}\b(?:base\s*64|rot\s*13|encoded)\b[^.!?\n]{0,200}\b(?:command|prompt|instructions?)\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /\b(?:decode|interpret)\b[^.!?\n]{0,80}\b(?:base\s*64|rot\s*13|encoded)\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /\b(?:use|call|invoke)\b[^.!?\n]{0,80}\b(?:tool|function|browser|shell)\b[^.!?\n]{0,180}\b(?:hidden|instructions?|prompt|secret|send|upload|execute|server)\b[^.!?\n]*(?:[.!?]|$)/gim,
+  /<\s*\/?\s*untrusted_(?:proposal|foundation_strategy)_data\s*>/gim,
 ];
 
 export function inspectAndStripInjection(text, { source }) {
   const original = String(text || "");
+  const view = securityView(original);
   const spans = mergeSpans(
-    injectionPatterns.flatMap((pattern) => matchesFor(pattern, original)),
+    injectionPatterns.flatMap((pattern) => matchesFor(pattern, view)),
   );
 
   if (!spans.length) {
@@ -50,18 +62,38 @@ export function inspectAndStripInjection(text, { source }) {
 }
 
 export function containsInjection(text) {
+  const view = securityView(String(text || ""));
   return injectionPatterns.some((pattern) => {
     pattern.lastIndex = 0;
-    return pattern.test(String(text || ""));
+    return pattern.test(view.text);
   });
 }
 
-function matchesFor(pattern, text) {
+function matchesFor(pattern, view) {
   pattern.lastIndex = 0;
-  return Array.from(text.matchAll(pattern), (match) => ({
-    start: match.index,
-    end: match.index + match[0].length,
-  }));
+  return Array.from(view.text.matchAll(pattern), (match) => {
+    const normalizedStart = match.index;
+    const normalizedEnd = match.index + match[0].length;
+    return {
+      start: view.indexMap[normalizedStart] ?? 0,
+      end: (view.indexMap[normalizedEnd - 1] ?? view.originalLength - 1) + 1,
+    };
+  });
+}
+
+function securityView(original) {
+  let text = "";
+  const indexMap = [];
+  for (let index = 0; index < original.length; index += 1) {
+    const character = original[index];
+    if (/[\u200B-\u200F\u2060\uFEFF]/u.test(character)) continue;
+    const normalized = character.normalize("NFKC");
+    for (const outputCharacter of normalized) {
+      text += /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(outputCharacter) ? " " : outputCharacter;
+      indexMap.push(index);
+    }
+  }
+  return { text, indexMap, originalLength: original.length };
 }
 
 function mergeSpans(spans) {
