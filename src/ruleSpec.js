@@ -1,4 +1,5 @@
 import { z } from "zod";
+import fs from "node:fs";
 import { artifactMetadata, computeRuleHash, inspectArtifactVersion, migrationNotice, RESERVED_FIELDS, SCHEMA_VERSION } from "./artifacts.js";
 import { CUSTOM_REASON_CODE_PATTERN, isReasonCode, REASON_CODES } from "./reasonCodes.js";
 
@@ -124,14 +125,15 @@ export const applicantProfileSchema = z.object({
 }).strict();
 
 export const funnelInputSchema = z.object({
-  grantSize: z.coerce.number().positive().default(250000),
+  grantSize: z.coerce.number().positive().default(500000),
   totalPool: z.coerce.number().positive().default(10000000),
-  expectedApplications: z.coerce.number().int().nonnegative().default(200),
+  expectedApplications: z.coerce.number().int().nonnegative().default(1000),
   minutesPerFirstRead: z.coerce.number().nonnegative().default(20),
-  hoursPerApplication: z.coerce.number().nonnegative().default(8),
+  advancedReviewHours: z.coerce.number().nonnegative().default(8),
+  expectedAdmitRate: z.coerce.number().min(0).max(1).default(0.2),
   loadedHourlyCost: z.coerce.number().nonnegative().default(65),
-  applicantHoursPerApplication: z.coerce.number().nonnegative().default(24),
-  applicantHourlyValue: z.coerce.number().nonnegative().default(35),
+  applicantHoursPerApplication: z.coerce.number().nonnegative().default(40),
+  applicantHourlyValue: z.coerce.number().nonnegative().default(85),
 }).strict();
 
 export function evaluateProfile(ruleSpec, profile) {
@@ -195,10 +197,12 @@ export function evaluateCandidateSet(ruleSpec, profiles) {
 
 export function summarizeCandidateResults(ruleSpec, results) {
   const spec = normalizeRuleSpecInput(ruleSpec);
+  const clauseFrequency = buildClauseFrequency(spec, results);
   return {
     results,
     clauseSummary: summarizeClauses(spec, results),
-    clauseFrequency: buildClauseFrequency(spec, results),
+    clauseFrequency,
+    clauseFrequencyFindings: buildClauseFrequencyFindings(clauseFrequency, results.length),
     impactReport: buildImpactReport(spec, results),
   };
 }
@@ -228,36 +232,48 @@ export function evaluateSelfScreen(ruleSpec, profile) {
   return { status: "ADMIT", decidingClauseId: null, reasonCode: null, missingFact: null };
 }
 
-export function calculateFunnel(rawInputs) {
+export function calculateFunnel(rawInputs, options = {}) {
   const provided = new Set(Object.keys(rawInputs || {}));
   const inputs = funnelInputSchema.parse(rawInputs || {});
   const defaultSources = {
-    grantSize: "Tool planning default: $250,000",
+    grantSize: "Tool planning default: $500,000",
     totalPool: "Tool planning default: $10 million",
-    expectedApplications: "Tool planning default: 200 applications",
+    expectedApplications: "Tool planning default: 1,000 applications",
     minutesPerFirstRead: "Tool planning default: 20 minutes",
-    hoursPerApplication: "Tool planning default: 8 hours",
+    advancedReviewHours: "Tool planning default: 8 hours per admitted application",
+    expectedAdmitRate: "Tool planning default: 20% when no candidate profiles are loaded",
     loadedHourlyCost: "Tool planning default: $65 per hour",
-    applicantHoursPerApplication: "Tool planning default: 24 hours",
-    applicantHourlyValue: "Tool planning default: $35 per hour",
+    applicantHoursPerApplication: "Default source: published sector estimate, user-editable",
+    applicantHourlyValue: "Default source: published sector estimate, user-editable",
   };
   const grantsAvailable = Math.floor(inputs.totalPool / inputs.grantSize);
-  const reviewerHours = inputs.expectedApplications * (inputs.minutesPerFirstRead / 60 + inputs.hoursPerApplication);
+  const firstReadHours = inputs.expectedApplications * inputs.minutesPerFirstRead / 60;
+  const hasObservedAdmitCount = Number.isInteger(options.admittedCount) && options.admittedCount >= 0;
+  const admittedCount = hasObservedAdmitCount ? options.admittedCount : inputs.expectedApplications * inputs.expectedAdmitRate;
+  const advancedReviewHours = admittedCount * inputs.advancedReviewHours;
+  const reviewerHours = firstReadHours + advancedReviewHours;
   const applicantHours = inputs.expectedApplications * inputs.applicantHoursPerApplication;
   const applicantCost = applicantHours * inputs.applicantHourlyValue;
   const reviewerCost = reviewerHours * inputs.loadedHourlyCost;
   const applicantCostPerDollarGranted = inputs.totalPool > 0 ? applicantCost / inputs.totalPool : null;
+  const applicantCostCentsPerDollarGranted = applicantCostPerDollarGranted === null ? null : applicantCostPerDollarGranted * 100;
   return {
     inputs,
     inputSources: Object.fromEntries(Object.keys(inputs).map((key) => [key, provided.has(key) ? "foundation_input" : "tool_default"])),
     defaultSources,
-    outputs: { grantsAvailable, reviewerHours, reviewerCost, applicantHours, applicantCost, applicantCostPerDollarGranted },
+    outputs: { grantsAvailable, admittedCount, admittedCountSource: hasObservedAdmitCount ? "exclusion_report" : "expected_admit_rate", firstReadHours, advancedReviewHours, reviewerHours, reviewerCost, applicantHours, applicantCost, applicantCostPerDollarGranted, applicantCostCentsPerDollarGranted },
     arithmetic: [
       `Grants available = floor(${inputs.totalPool} / ${inputs.grantSize}) = ${grantsAvailable}`,
-      `Reviewer hours = ${inputs.expectedApplications} × (${inputs.minutesPerFirstRead} / 60 + ${inputs.hoursPerApplication}) = ${round(reviewerHours)}`,
+      `First-read hours = ${inputs.expectedApplications} × ${inputs.minutesPerFirstRead} / 60 = ${round(firstReadHours)}`,
+      hasObservedAdmitCount
+        ? `Admitted count = ${admittedCount} from the candidate exclusion report`
+        : `Expected admitted count = ${inputs.expectedApplications} × ${round(inputs.expectedAdmitRate * 100, 1)}% = ${round(admittedCount)}`,
+      `Advanced-review hours = ${round(admittedCount)} × ${inputs.advancedReviewHours} = ${round(advancedReviewHours)}`,
+      `Reviewer hours = ${round(firstReadHours)} + ${round(advancedReviewHours)} = ${round(reviewerHours)}`,
       `Applicant hours = ${inputs.expectedApplications} × ${inputs.applicantHoursPerApplication} = ${round(applicantHours)}`,
       `Applicant cost = ${round(applicantHours)} × ${inputs.applicantHourlyValue} = ${round(applicantCost)}`,
-      `Applicant labor cost per dollar granted = ${round(applicantCost)} / ${inputs.totalPool} = ${round(applicantCostPerDollarGranted, 4)}`,
+      `Applicant labor cost per dollar granted = ${round(applicantCost)} / ${inputs.totalPool} = ${round(applicantCostPerDollarGranted, 4)} dollars`,
+      `Applicant labor cost per dollar granted = ${round(applicantCostPerDollarGranted, 4)} × 100 = ${round(applicantCostCentsPerDollarGranted, 2)} cents`,
     ],
   };
 }
@@ -276,20 +292,8 @@ export function instrumentationPlan() {
   ];
 }
 
-export const starterProfiles = Object.freeze([
-  profile("Harbor Youth Learning", "standalone", 2400000, 7, "United States", "youth learning", "501(c)(3)"),
-  profile("Mesa Food Futures", "fiscal_sponsor", 180000, 1, "Arizona", "food security", "fiscally sponsored project"),
-  profile("Great Lakes Housing Lab", "group_return", 920000, 4, "Michigan", "housing", "501(c)(3) affiliate"),
-  profile("Delta Maternal Health Circle", "990_n", 46000, 2, "Mississippi", "maternal health", "501(c)(3)"),
-  profile("Appalachian Broadband Cooperative", "standalone", 3600000, 5, "Kentucky", "digital access", "cooperative"),
-  profile("Pacific Climate Justice Network", "fiscal_sponsor", 640000, 3, "California", "climate justice", "fiscally sponsored project"),
-  profile("Prairie Arts Exchange", "990_n", 38000, 8, "Kansas", "arts", "501(c)(3)"),
-  profile("Metro Reentry Partnership", "standalone", 5100000, 12, "New York", "reentry", "501(c)(3)"),
-  profile("Border Water Commons", "group_return", 1300000, 2, "New Mexico", "water access", "501(c)(3) affiliate"),
-  profile("Rural Disability Advocates", "standalone", 870000, 1, "West Virginia", "disability rights", "501(c)(3)"),
-  profile("Coastal Workforce Guild", "standalone", 7400000, 16, "North Carolina", "workforce development", "501(c)(6)"),
-  profile("Neighborhood Data Stewards", "fiscal_sponsor", 290000, 0.5, "Illinois", "data justice", "fiscally sponsored project"),
-]);
+const starterProfileFixture = JSON.parse(fs.readFileSync(new URL("../fixtures/starter-profiles.json", import.meta.url), "utf8"));
+export const starterProfiles = Object.freeze(starterProfileFixture.map((item) => Object.freeze(applicantProfileSchema.parse(item))));
 
 function normalizeProfile(profile) {
   return {
@@ -337,22 +341,47 @@ function buildClauseFrequency(ruleSpec, results) {
   }).sort((left, right) => right.excluded - left.excluded || right.indeterminate - left.indeterminate || left.clauseId.localeCompare(right.clauseId));
 }
 
-function buildImpactReport(ruleSpec, results) {
-  const isThin = (profile) => ["fiscal_sponsor", "990_n", "group_return"].includes(normalizeText(profile.filingRelationship)) || Number(profile.yearsOperating) < 3;
-  const thin = results.filter((item) => isThin(item.profile));
-  const others = results.filter((item) => !isThin(item.profile));
-  const rate = (items) => items.length ? items.filter((item) => item.outcome.status === "EXCLUDE").length / items.length : 0;
-  const clauseDrivers = summarizeClauses(ruleSpec, results).filter((item) => item.excluded > 0);
-  return {
-    filingThin: { count: thin.length, excluded: thin.filter((item) => item.outcome.status === "EXCLUDE").length, exclusionRate: rate(thin) },
-    other: { count: others.length, excluded: others.filter((item) => item.outcome.status === "EXCLUDE").length, exclusionRate: rate(others) },
-    differentialPercentagePoints: round((rate(thin) - rate(others)) * 100, 1),
-    clauseDrivers,
-  };
+function buildClauseFrequencyFindings(frequencies, profileCount) {
+  return frequencies.flatMap((item) => {
+    if (item.excluded === 0 && item.indeterminate === 0) {
+      return [{ clauseId: item.clauseId, type: "never_fires", message: `${item.clauseId} never fires against the tested set. The clause may carry language that does no work, or the candidate set may not test it. Check before publication.` }];
+    }
+    if (profileCount > 0 && item.excluded === profileCount && item.indeterminate === 0) {
+      return [{ clauseId: item.clauseId, type: "excludes_everything", message: `${item.clauseId} excludes every tested profile. The clause may close the call entirely, or the candidate set may be unrepresentative. Check before publication.` }];
+    }
+    return [];
+  });
 }
 
-function profile(organizationName, filingRelationship, annualBudget, yearsOperating, geography, issueArea, orgType) {
-  return { organizationName, ein: "", filingRelationship, annualBudget, yearsOperating, geography, issueArea, orgType, description: "Fictional candidate profile for rule testing." };
+function buildImpactReport(ruleSpec, results) {
+  const minimumGroupSize = 10;
+  const isThin = (profile) => ["fiscal_sponsor", "990_n", "group_return", "no_filing", "under_three_years"].includes(normalizeText(profile.filingRelationship)) || Number(profile.yearsOperating) < 3;
+  const thin = results.filter((item) => isThin(item.profile));
+  const others = results.filter((item) => !isThin(item.profile));
+  const rate = (items) => items.length ? items.filter((item) => item.outcome.status === "EXCLUDE").length / items.length : null;
+  const belowMinimum = thin.length < minimumGroupSize ? { label: "Filing-thin group", count: thin.length } : others.length < minimumGroupSize ? { label: "Other group", count: others.length } : null;
+  const computed = !belowMinimum;
+  const clauseDrivers = ruleSpec.clauses.map((clause) => {
+    const thinExcluded = thin.filter((item) => item.outcome.status === "EXCLUDE" && item.outcome.decidingClauseId === clause.id).length;
+    const otherExcluded = others.filter((item) => item.outcome.status === "EXCLUDE" && item.outcome.decidingClauseId === clause.id).length;
+    const thinRate = computed ? thinExcluded / thin.length : null;
+    const otherRate = computed ? otherExcluded / others.length : null;
+    return { clauseId: clause.id, fact: clause.fact, sourceSentence: clause.sourceSentence, filingThinExcluded: thinExcluded, otherExcluded, filingThinRate: thinRate, otherRate, differentialPercentagePoints: computed ? round((thinRate - otherRate) * 100, 1) : null };
+  }).filter((item) => item.filingThinExcluded + item.otherExcluded > 0);
+  const leadingDriver = computed ? clauseDrivers.toSorted((left, right) => Math.abs(right.differentialPercentagePoints) - Math.abs(left.differentialPercentagePoints))[0] : null;
+  const attribution = leadingDriver && leadingDriver.fact !== "filing_relationship" && leadingDriver.differentialPercentagePoints !== 0
+    ? `The largest observed gap is driven by ${leadingDriver.clauseId} (${leadingDriver.fact}), a clause unrelated to filing structure.`
+    : null;
+  return {
+    computed,
+    minimumGroupSize,
+    message: belowMinimum ? `Not computed. ${belowMinimum.label} has ${belowMinimum.count} profiles, below the minimum of ${minimumGroupSize}. Load more candidate profiles or run a retrospective CSV to get a comparison worth reading.` : null,
+    filingThin: { count: thin.length, excluded: thin.filter((item) => item.outcome.status === "EXCLUDE").length, exclusionRate: computed ? rate(thin) : null },
+    other: { count: others.length, excluded: others.filter((item) => item.outcome.status === "EXCLUDE").length, exclusionRate: computed ? rate(others) : null },
+    differentialPercentagePoints: computed ? round((rate(thin) - rate(others)) * 100, 1) : null,
+    clauseDrivers,
+    attribution,
+  };
 }
 
 function isMissing(value) { return value === undefined || value === null || value === ""; }

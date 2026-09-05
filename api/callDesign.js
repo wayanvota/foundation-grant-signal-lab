@@ -26,10 +26,14 @@ export async function generateCallDesign(input, { compileRule = compileRuleText 
     results: evaluation.results,
     clauseSummary: evaluation.clauseSummary,
     clauseFrequency: evaluation.clauseFrequency,
+    clauseFrequencyFindings: evaluation.clauseFrequencyFindings,
     impactReport,
   }, { generatedAt });
   const selfScreen = reportArtifact("self_screen", ruleSpec, generateSelfScreen(ruleSpec), { generatedAt });
-  const funnelProjection = reportArtifact("funnel_projection", ruleSpec, calculateFunnel(parsed.funnel), { generatedAt });
+  const admittedCount = parsed.candidateProfiles.length
+    ? evaluation.results.filter((item) => item.outcome.status === "ADMIT").length
+    : undefined;
+  const funnelProjection = reportArtifact("funnel_projection", ruleSpec, calculateFunnel(parsed.funnel, { admittedCount }), { generatedAt });
   const result = {
     ruleSpec,
     safeguard: compilation.safeguard,

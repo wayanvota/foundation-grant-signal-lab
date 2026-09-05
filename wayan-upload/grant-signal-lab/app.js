@@ -125,25 +125,38 @@ function renderCallDesign(result) {
     row.append(textElement("td", item.clauseId), textElement("td", formatNumber(item.excluded)), textElement("td", formatNumber(item.indeterminate)), textElement("td", item.sourceSentence));
     fields["clause-frequency"].append(row);
   }
+  clear(fields["clause-frequency-findings"]);
+  for (const item of result.exclusionReport.clauseFrequencyFindings || []) fields["clause-frequency-findings"].append(infoCard(item.clauseId, item.message));
 
   const impact = result.exclusionReport.impactReport;
-  renderMetrics(fields["impact-metrics"], [
-    ["Filing-thin exclusion rate", formatPercent(impact.filingThin.exclusionRate)],
-    ["Other profiles", formatPercent(impact.other.exclusionRate)],
-    ["Difference", `${formatNumber(impact.differentialPercentagePoints)} percentage points`],
-  ]);
+  if (impact.computed) {
+    renderMetrics(fields["impact-metrics"], [
+      [`Filing-thin exclusion rate (n=${impact.filingThin.count})`, formatPercent(impact.filingThin.exclusionRate)],
+      [`Other profiles (n=${impact.other.count})`, formatPercent(impact.other.exclusionRate)],
+      ["Difference", `${formatNumber(impact.differentialPercentagePoints)} percentage points`],
+    ]);
+  } else {
+    clear(fields["impact-metrics"]);
+    appendEmpty(fields["impact-metrics"], impact.message);
+  }
   clear(fields["impact-drivers"]);
   if (!impact.clauseDrivers.length) appendEmpty(fields["impact-drivers"], "No clause excluded a candidate in this set.");
-  for (const item of impact.clauseDrivers) fields["impact-drivers"].append(infoCard(`${item.clauseId} excluded ${item.excluded}`, item.sourceSentence));
+  if (impact.attribution) fields["impact-drivers"].append(infoCard("Largest observed gap", impact.attribution));
+  for (const item of impact.clauseDrivers) {
+    const counts = `Filing-thin: ${item.filingThinExcluded} of ${impact.filingThin.count}. Other: ${item.otherExcluded} of ${impact.other.count}.`;
+    const difference = impact.computed ? ` Difference: ${formatNumber(item.differentialPercentagePoints)} percentage points.` : "";
+    fields["impact-drivers"].append(infoCard(`${item.clauseId} · ${item.fact.replaceAll("_", " ")}`, `${counts}${difference} ${item.sourceSentence}`));
+  }
 
   fields["self-screen-text"].value = result.selfScreen.plainText;
   fields["self-screen-html"].textContent = result.selfScreen.html;
   const funnel = result.funnelProjection.outputs;
   renderMetrics(fields["funnel-metrics"], [
     ["Grants available", formatNumber(funnel.grantsAvailable)], ["Projected applications", formatNumber(result.funnelProjection.inputs.expectedApplications)],
-    ["Reviewer hours", formatNumber(funnel.reviewerHours)], ["Reviewer cost", formatCurrency(funnel.reviewerCost)],
+    ["Admitted for advanced review", formatNumber(funnel.admittedCount)], ["First-read hours", formatNumber(funnel.firstReadHours)],
+    ["Advanced-review hours", formatNumber(funnel.advancedReviewHours)], ["Reviewer hours", formatNumber(funnel.reviewerHours)], ["Reviewer cost", formatCurrency(funnel.reviewerCost)],
     ["Applicant hours", formatNumber(funnel.applicantHours)], ["Applicant cost", formatCurrency(funnel.applicantCost)],
-    ["Applicant labor per $1 granted", formatCurrency(funnel.applicantCostPerDollarGranted, 4)],
+    ["Applicant labor per $1 granted", `${formatNumber(funnel.applicantCostCentsPerDollarGranted)} cents`],
   ]);
   clear(fields["funnel-arithmetic"]);
   for (const line of result.funnelProjection.arithmetic) fields["funnel-arithmetic"].append(textElement("li", line));
@@ -237,7 +250,7 @@ function readProfileRows() {
 function readFunnelInputs() {
   return {
     totalPool: Number(fields["total-pool"].value), grantSize: Number(fields["grant-size"].value), expectedApplications: Number(fields["expected-applications"].value),
-    minutesPerFirstRead: Number(fields["minutes-first-read"].value), hoursPerApplication: Number(fields["hours-per-application"].value), loadedHourlyCost: Number(fields["loaded-hourly-cost"].value),
+    minutesPerFirstRead: Number(fields["minutes-first-read"].value), advancedReviewHours: Number(fields["advanced-review-hours"].value), expectedAdmitRate: Number(fields["expected-admit-rate"].value) / 100, loadedHourlyCost: Number(fields["loaded-hourly-cost"].value),
     applicantHoursPerApplication: Number(fields["applicant-hours"].value), applicantHourlyValue: Number(fields["applicant-hourly-value"].value),
   };
 }

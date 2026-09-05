@@ -9,7 +9,9 @@ test("public interface exposes only the two shipped modes and states the boundar
   const html = await fs.readFile(new URL("../frontend/index.html", import.meta.url), "utf8");
   assert.doesNotMatch(html, /<button[^>]*>[^<]*(?:Intake Screen|Cohort Report)/i);
   assert.match(html, /does not run a live intake workflow or produce cohort reports/i);
-  assert.match(html, /20 of 20 determinism runs and 100 of 100 self-screen parity profiles on September 5, 2026/i);
+  assert.match(html, /Self-screen parity: 100\/100, boundary-value suite, run 2026-09-05/i);
+  assert.match(html, /Determinism: 20\/20 repeated evaluations, run 2026-09-05/i);
+  assert.equal((html.match(/Default source: published sector estimate, user-editable/g) || []).length, 2);
   assert.match(html, /worked-example\.html/);
 });
 
@@ -24,6 +26,9 @@ test("worked example builds as a complete static artifact with a downloadable Ru
     assert.equal(ruleSpec.schema_version, "1.0.0");
     assert.match(ruleSpec.rule_hash, /^sha256:[a-f0-9]{64}$/);
     assert.match(html, /worked-example-rule-spec\.json/);
+    assert.match(html, /Not computed\..+below the minimum of 10/i);
+    assert.match(html, /Applicant labor cost per dollar granted = 0\.34 × 100 = 34 cents/i);
+    assert.match(html, /Grants available<\/small><strong>20<\/strong>/i);
   } finally {
     await fs.rm(target, { recursive: true, force: true });
   }
