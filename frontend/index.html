@@ -2,127 +2,131 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Foundation Grant Signal Lab</title>
-    <meta name="description" content="A traceable first-pass diligence memo for foundation staff reviewing a proposal against public filings and stated strategy." />
-    <meta name="author" content="Wayan Vota" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Design a foundation call, test its eligibility rules, and produce traceable diligence memos without storing applicant records." />
     <meta property="og:title" content="Foundation Grant Signal Lab" />
-    <meta property="og:description" content="Check proposal claims against public filings and stated foundation criteria before advancing to real diligence." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://wayan.com/grant-signal-lab/" />
-    <meta property="og:image" content="https://wayan.com/grant-signal-lab/og-image.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="./styles.css?v=20260810" />
-    <script src="./config.js?v=20260810"></script>
-    <script src="./app.js?v=20260810" type="module"></script>
+    <meta property="og:description" content="Rule design, deterministic eligibility testing, and evidence-linked grant diligence." />
+    <meta property="og:image" content="./og-image.png" />
+    <title>Foundation Grant Signal Lab</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./mode1.css" />
+    <script src="./config.js" defer></script>
+    <script src="./app.js" defer></script>
   </head>
   <body>
     <header class="topbar">
-      <a class="brand-lockup" href="#top" aria-label="Foundation Grant Signal Lab home">
-        <span class="brand-mark">F</span>
-        <span><strong>Foundation Grant Signal Lab</strong><small>For grantmakers</small></span>
-      </a>
-      <nav aria-label="Primary navigation">
-        <a href="#review">Review</a>
-        <a href="#memo">Memo</a>
-        <a href="#method">Method</a>
-      </nav>
+      <a class="brand-lockup" href="#top"><span class="brand-mark">GS</span><span><strong>Foundation Grant Signal Lab</strong><small>Call design through diligence</small></span></a>
+      <nav><a href="#workspace">Workspace</a><a href="#method">Method</a></nav>
     </header>
 
     <main id="top">
       <section class="hero">
         <div>
-          <p class="eyebrow accent">One decision</p>
-          <h1>Should this proposal advance to real diligence?</h1>
-          <p class="lede">Read the proposal against the applicant’s latest public filing and your foundation’s stated criteria. The result separates checkable evidence, filing gaps, strategy fit, and questions that still require a program officer.</p>
-          <div class="hero-actions">
-            <a class="button" href="#review">Run a review</a>
-            <button class="button ghost" id="sample-button" type="button">View fictional sample memo</button>
-          </div>
+          <p class="eyebrow accent">A full-cycle program officer tool</p>
+          <h1>See what the rule does before applicants do.</h1>
+          <p class="lede">Compile eligibility prose into readable tests, run those tests against fictional or user-supplied profiles, project reviewer and applicant burden, and carry the same evidence discipline into proposal diligence.</p>
         </div>
-        <aside class="decision-card" aria-label="Review sequence">
-          <div><span>1</span><strong>Proposal claim</strong><small>Exact sentence, never a polished paraphrase.</small></div>
-          <div><span>2</span><strong>Filed evidence</strong><small>Named line, tax year, and filing lag.</small></div>
-          <div><span>3</span><strong>Human question</strong><small>Divergence becomes diligence, not an accusation.</small></div>
+        <aside class="decision-card" aria-label="Operating sequence">
+          <div><span>1</span><strong>Compile the rule</strong><small>Every test keeps its source sentence.</small></div>
+          <div><span>2</span><strong>Run deterministic code</strong><small>No model participates in an eligibility outcome.</small></div>
+          <div><span>3</span><strong>Keep the record</strong><small>Download the RuleSpec and session bundle. The server stores nothing.</small></div>
         </aside>
       </section>
 
-      <section class="workspace" id="review">
-        <form class="input-panel" id="review-form">
-          <div class="panel-heading"><p class="eyebrow">Review inputs</p><span id="readiness">Needs source material</span></div>
-
-          <div class="field-grid">
-            <label>Applicant legal name<input id="applicant-name" name="applicantName" maxlength="240" required /></label>
-            <label>EIN <span class="required-note">required</span><input id="ein" name="ein" inputmode="numeric" placeholder="12-3456789" pattern="\d{2}-?\d{7}" required /></label>
-          </div>
-
-          <label>Filing relationship
-            <select id="filing-context" name="filingContext">
-              <option value="standalone">Applicant files its own return</option>
-              <option value="fiscal_sponsor">Applicant uses a fiscal sponsor</option>
-              <option value="group_return">Applicant is included in a group return</option>
-              <option value="990_n">Applicant files Form 990-N</option>
-            </select>
-          </label>
-          <label id="sponsor-field" hidden>Fiscal sponsor name<input id="fiscal-sponsor-name" name="fiscalSponsorName" maxlength="240" /></label>
-
-          <label>Proposal
-            <textarea id="proposal" name="proposal" rows="10" maxlength="40000" placeholder="Paste the proposal’s decision-relevant text, or upload it below."></textarea>
-          </label>
-          <label class="file-field">Or upload a proposal document
-            <input id="proposal-file" name="proposalFile" type="file" accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-            <small>TXT, Markdown, PDF, or DOCX. Maximum 6 MB.</small>
-          </label>
-
-          <label>Foundation strategy and criteria
-            <textarea id="foundation-strategy" name="foundationStrategy" rows="8" maxlength="30000" placeholder="Paste priorities, eligibility rules, exclusions, and published grantmaking criteria." required></textarea>
-          </label>
-
-          <div class="form-actions">
-            <button class="button full" id="submit-button" type="submit">Generate diligence memo</button>
-            <button class="button ghost full" id="sample-inline-button" type="button">View fictional sample memo</button>
-          </div>
-          <div class="review-progress" id="review-progress" role="status" aria-live="polite" hidden>
-            <div><span id="progress-label">Checking the filing and source text.</span><strong>Working</strong></div>
-            <div class="progress-track" aria-hidden="true"><span></span></div>
-          </div>
-          <p class="status-message" id="form-status" role="status"></p>
-          <p class="privacy-note"><strong>Stateless by design.</strong> This tool processes the submitted text and public filing data for this review, then returns the memo. It does not save applicant inputs or results.</p>
-        </form>
-
-        <article class="memo-panel" id="memo" aria-live="polite">
-          <div class="empty-state" id="empty-state">
-            <p class="eyebrow">Diligence memo</p>
-            <h2>Evidence before inference.</h2>
-            <p>Run a review or open the fictional sample. Each visible finding will carry a proposal quote, filing line, or foundation criterion.</p>
-          </div>
-          <div id="memo-content" hidden>
-            <header class="memo-header">
-              <div><p class="eyebrow">Recommendation</p><p class="recommendation" id="recommendation"></p></div>
-              <p class="filing-badge" id="filing-badge"></p>
-            </header>
-            <p class="recommendation-reason" id="recommendation-reason"></p>
-            <section class="board-line"><p class="eyebrow">Board line</p><p id="board-line"></p></section>
-            <p class="boundary" id="human-boundary"></p>
-
-            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 1</p><h2>Claim versus filing</h2></div><p>Each gap includes the filing lag.</p></div><div class="card-stack" id="claim-checks"></div></section>
-            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 2</p><h2>Financial diligence questions</h2></div><p>Inputs remain visible. No standalone risk score.</p></div><div class="card-stack" id="financial-signals"></div></section>
-            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 3</p><h2>Fit against stated strategy</h2></div></div><div class="card-stack" id="strategy-findings"></div></section>
-            <section class="memo-section route-section"><p class="eyebrow">Review route</p><h2 id="review-route"></h2><p id="review-route-why"></p><div class="source-list" id="route-sources"></div></section>
-            <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">What staff still must do</p><h2>Next diligence actions</h2></div></div><ol class="action-list" id="next-actions"></ol></section>
-            <section class="safeguard-notice" id="safeguard-notice" hidden><strong>Source safeguard triggered</strong><p id="safeguard-copy"></p></section>
-          </div>
-        </article>
-      </section>
-
-      <section class="method-section" id="method">
-        <div><p class="eyebrow accent">Method</p><h2>A filing is evidence with a date, not the present tense.</h2></div>
-        <div class="method-grid">
-          <article><strong>Claims stay claims</strong><p>Proposal language is quoted and classified before it is checked.</p></article>
-          <article><strong>Lag stays visible</strong><p>A current proposal can diverge legitimately from an older return. The memo shows both.</p></article>
-          <article><strong>People retain authority</strong><p>The tool routes diligence. It does not assess mission quality or make an award decision.</p></article>
+      <section class="mode-shell" id="workspace">
+        <div class="mode-tabs" role="tablist" aria-label="Signal Lab modes">
+          <button class="mode-tab active" type="button" data-mode="call-design" aria-selected="true"><span>01</span>Call Design</button>
+          <button class="mode-tab" type="button" disabled><span>02</span>Intake Screen <small>Next</small></button>
+          <button class="mode-tab" type="button" data-mode="diligence" aria-selected="false"><span>03</span>Diligence Memo</button>
+          <button class="mode-tab" type="button" disabled><span>04</span>Cohort Report <small>Later</small></button>
         </div>
+
+        <section class="mode-panel" id="call-design-mode">
+          <form class="input-panel call-design-form" id="call-design-form">
+            <div class="panel-heading"><div><p class="eyebrow">Mode 1</p><h2>Call Design</h2></div><span id="design-readiness">Needs a draft rule</span></div>
+            <label>Draft eligibility rule
+              <textarea id="rule-text" name="ruleText" rows="11" maxlength="40000" placeholder="Paste mandatory eligibility rules, preferences, exclusions, and values language."></textarea>
+            </label>
+            <label class="file-field">Or upload the draft rule
+              <input id="rule-file" name="ruleFile" type="file" accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              <small>TXT, Markdown, PDF, or DOCX. Maximum 6 MB.</small>
+            </label>
+
+            <fieldset>
+              <legend>Candidate profiles <span>optional</span></legend>
+              <p class="field-help">Use the fictional starter set, upload CSV, or add profiles manually. Profiles are used only to show what the rule admits, excludes, or cannot decide.</p>
+              <div class="row-actions"><button class="button ghost compact" id="starter-profiles-button" type="button">Load 12 fictional profiles</button><label class="button ghost compact file-button">Upload CSV<input id="profiles-csv" type="file" accept=".csv,text/csv" /></label><button class="button ghost compact" id="add-profile-button" type="button">Add profile</button></div>
+              <div class="profile-list" id="profile-list"></div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Funnel and burden inputs</legend>
+              <div class="numeric-grid">
+                <label>Total grant pool ($)<input id="total-pool" type="number" min="1" value="10000000" /></label>
+                <label>Grant size ($)<input id="grant-size" type="number" min="1" value="250000" /></label>
+                <label>Expected applications<input id="expected-applications" type="number" min="0" value="200" /></label>
+                <label>Minutes per first read<input id="minutes-first-read" type="number" min="0" value="20" /></label>
+                <label>Later staff hours per application<input id="hours-per-application" type="number" min="0" step="0.25" value="8" /></label>
+                <label>Loaded staff cost per hour ($)<input id="loaded-hourly-cost" type="number" min="0" value="65" /></label>
+                <label>Applicant hours per application<input id="applicant-hours" type="number" min="0" step="0.25" value="24" /></label>
+                <label>Applicant labor value per hour ($)<input id="applicant-hourly-value" type="number" min="0" value="35" /></label>
+              </div>
+            </fieldset>
+
+            <button class="button full" id="compile-button" type="submit">Compile and test this call</button>
+            <div class="review-progress" id="design-progress" role="status" aria-live="polite" hidden><div><span>Compiling the rule, then running deterministic tests.</span><strong>Working</strong></div><div class="progress-track"><span></span></div></div>
+            <p class="status-message" id="design-status" role="status"></p>
+            <p class="privacy-note"><strong>You keep the continuity.</strong> This server does not save the rule, profiles, or results. Download the RuleSpec or session bundle before leaving.</p>
+          </form>
+
+          <article class="memo-panel design-output" id="design-output" aria-live="polite">
+            <div class="empty-state" id="design-empty"><p class="eyebrow">Call impact report</p><h2>A rule is a filter.</h2><p>Compile a draft to see each test, language that cannot become a test, who the rule excludes, filing-thin effects, and the burden created by the funnel.</p></div>
+            <div id="design-results" hidden>
+              <header class="memo-header"><div><p class="eyebrow">Compiled RuleSpec</p><h2 id="rule-name"></h2></div><div class="download-actions"><button class="button ghost compact" id="download-rulespec" type="button">Download RuleSpec</button><button class="button compact" id="download-bundle" type="button">Download session bundle</button></div></header>
+              <p class="boundary" id="design-method"></p>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Readable evaluator</p><h2>Compiled clauses</h2></div><p>Source, fact, operator, value, and consequence remain visible.</p></div><div class="card-stack" id="compiled-clauses"></div></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Values and ambiguity</p><h2>Uncompiled language</h2></div><p>Language the tool cannot state as a testable fact stays here.</p></div><div class="card-stack" id="uncompiled-language"></div></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Candidate test</p><h2>Exclusion report</h2></div><p id="candidate-set-label"></p></div><div class="table-wrap"><table><thead><tr><th>Organization</th><th>Outcome</th><th>Reason code</th><th>Deciding clause</th></tr></thead><tbody id="exclusion-report"></tbody></table></div></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Filing-thin comparison</p><h2>Rule Impact Report</h2></div></div><div class="metric-grid" id="impact-metrics"></div><div class="card-stack" id="impact-drivers"></div></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Mandatory clauses only</p><h2>Self-screen question set</h2></div><div class="download-actions"><button class="button ghost compact" id="copy-self-screen" type="button">Copy plain text</button><button class="button ghost compact" id="download-self-screen" type="button">Download JSON</button></div></div><textarea id="self-screen-text" readonly rows="8"></textarea><details><summary>Copy-ready HTML</summary><pre id="self-screen-html"></pre></details></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Visible arithmetic</p><h2>Funnel and burden projection</h2></div></div><div class="metric-grid" id="funnel-metrics"></div><ol class="action-list" id="funnel-arithmetic"></ol></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Fields to capture</p><h2>Instrumentation plan</h2></div></div><div class="card-stack" id="instrumentation-plan"></div></section>
+            </div>
+          </article>
+        </section>
+
+        <section class="mode-panel" id="diligence-mode" hidden>
+          <form class="input-panel" id="review-form">
+            <div class="panel-heading"><div><p class="eyebrow">Mode 3</p><h2>Diligence Memo</h2></div><span id="readiness">Needs source material</span></div>
+            <div class="field-grid"><label>Applicant legal name<input id="applicant-name" name="applicantName" maxlength="240" required /></label><label>EIN <span class="required-note">required</span><input id="ein" name="ein" inputmode="numeric" placeholder="12-3456789" pattern="\d{2}-?\d{7}" required /></label></div>
+            <label>Filing relationship<select id="filing-context" name="filingContext"><option value="standalone">Applicant files its own return</option><option value="fiscal_sponsor">Applicant uses a fiscal sponsor</option><option value="group_return">Applicant is included in a group return</option><option value="990_n">Applicant files Form 990-N</option><option value="under_three_years">Under three years or no filing</option></select></label>
+            <label id="sponsor-field" hidden>Fiscal sponsor name<input id="fiscal-sponsor-name" name="fiscalSponsorName" maxlength="240" /></label>
+            <label>Ask-to-revenue review threshold <small>Foundation-set ratio, shown in the memo.</small><input id="ask-threshold" name="askToRevenueThreshold" type="number" min="0" max="5" step="0.05" value="0.25" /></label>
+            <label>Proposal<textarea id="proposal" name="proposal" rows="10" maxlength="40000" placeholder="Paste the proposal’s decision-relevant text, or upload it below."></textarea></label>
+            <label class="file-field">Or upload a proposal document<input id="proposal-file" name="proposalFile" type="file" accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" /><small>TXT, Markdown, PDF, or DOCX. Maximum 6 MB.</small></label>
+            <label>Foundation strategy and criteria<textarea id="foundation-strategy" name="foundationStrategy" rows="8" maxlength="30000" placeholder="Paste priorities, eligibility rules, exclusions, and published grantmaking criteria." required></textarea></label>
+            <div class="form-actions"><button class="button full" id="submit-button" type="submit">Generate diligence memo</button><button class="button ghost full" id="sample-inline-button" type="button">View fictional sample memo</button></div>
+            <div class="review-progress" id="review-progress" role="status" aria-live="polite" hidden><div><span id="progress-label">Checking the filing and source text.</span><strong>Working</strong></div><div class="progress-track"><span></span></div></div>
+            <p class="status-message" id="form-status" role="status"></p>
+            <p class="privacy-note"><strong>Stateless by design.</strong> The tool processes the submitted text and public filing data for this review, then returns the memo. It does not save applicant inputs or results.</p>
+          </form>
+          <article class="memo-panel" id="memo" aria-live="polite">
+            <div class="empty-state" id="empty-state"><p class="eyebrow">Diligence memo</p><h2>Evidence before inference.</h2><p>Run a review or open the fictional sample. Each visible finding carries a proposal quote, filing line, or foundation criterion.</p></div>
+            <div id="memo-content" hidden>
+              <header class="memo-header"><div><p class="eyebrow">Recommendation</p><p class="recommendation" id="recommendation"></p></div><p class="filing-badge" id="filing-badge"></p></header>
+              <p class="recommendation-reason" id="recommendation-reason"></p><section class="board-line"><p class="eyebrow">Board line</p><p id="board-line"></p></section><p class="boundary" id="human-boundary"></p><p class="boundary" id="threshold-used"></p>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 1</p><h2>Claim versus filing</h2></div><p>Each gap includes the filing lag.</p></div><div class="card-stack" id="claim-checks"></div></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 2</p><h2>Financial diligence questions</h2></div><p>Inputs remain visible. No standalone risk score.</p></div><div class="card-stack" id="financial-signals"></div></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">Evidence block 3</p><h2>Fit against stated strategy</h2></div></div><div class="card-stack" id="strategy-findings"></div></section>
+              <section class="memo-section route-section"><p class="eyebrow">Review route</p><h2 id="review-route"></h2><p id="review-route-why"></p><div class="source-list" id="route-sources"></div></section>
+              <section class="memo-section"><div class="section-heading"><div><p class="eyebrow">What staff still must do</p><h2>Next diligence actions</h2></div></div><ol class="action-list" id="next-actions"></ol></section>
+              <section class="safeguard-notice" id="safeguard-notice" hidden><strong>Source safeguard triggered</strong><p id="safeguard-copy"></p></section>
+            </div>
+          </article>
+        </section>
       </section>
+
+      <section class="method-section" id="method"><div><p class="eyebrow accent">Method</p><h2>The evaluator is inspectable code.</h2></div><div class="method-grid"><article><strong>Compilation is constrained</strong><p>The model may translate testable prose into a RuleSpec. Values language, quality judgments, and instructions addressed to the model remain uncompiled.</p></article><article><strong>Eligibility is deterministic</strong><p>The same RuleSpec and applicant facts produce the same status, reason code, and clause reference.</p></article><article><strong>People retain authority</strong><p>The tool does not recommend awards, score quality, judge community representation, or predict funding probability.</p></article></div></section>
     </main>
   </body>
 </html>

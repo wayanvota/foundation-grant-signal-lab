@@ -17,12 +17,7 @@ export async function generateGrantReview(input, {
 
   if (safeguarded.values.filingContext !== "standalone") {
     const knownAssessment = assessFilingUsability(null, safeguarded.values);
-    return terminalMemo({
-      input: safeguarded.values,
-      reasonCode: knownAssessment.state,
-      explanation: knownAssessment.reason,
-      safeguard: safeguarded,
-    });
+    return generateFilingThinMemo({ input: safeguarded.values, safeguard: safeguarded, assessment: knownAssessment, fetchIrs, runProvider });
   }
 
   let irsRecord;
@@ -38,6 +33,9 @@ export async function generateGrantReview(input, {
   }
   const filingAssessment = assessFilingUsability(irsRecord, safeguarded.values);
   if (filingAssessment.state !== FILING_REVIEW_STATES.READY) {
+    if (filingAssessment.state === FILING_REVIEW_STATES.NO_FILED_RETURN) {
+      return generateFilingThinMemo({ input: safeguarded.values, safeguard: safeguarded, assessment: filingAssessment, irsRecord, fetchIrs, runProvider });
+    }
     return terminalMemo({
       input: safeguarded.values,
       irsRecord,
@@ -99,7 +97,7 @@ export async function generateGrantReview(input, {
       filingName: irsRecord.organization?.name || null,
     },
     filingSource: publicFilingSummary(irsRecord),
-    claimChecks: compareClaimsToFiling(modelReview.claims, irsRecord),
+    claimChecks: compareClaimsToFiling(modelReview.claims, irsRecord, { askToRevenueThreshold: safeguarded.values.askToRevenueThreshold }),
     financialSignals: calculateFinancialSignals(irsRecord),
     strategyFindings: modelReview.strategyFindings,
     eligibilityBucket: modelReview.eligibilityBucket,
@@ -108,6 +106,7 @@ export async function generateGrantReview(input, {
     humanReviewBoundary: humanCheckBoundary(),
     safeguard: safeguardSummary(safeguarded, providerResponse.attempts),
     sourceQuality: modelReview.sourceQuality,
+    askToRevenueThreshold: { value: safeguarded.values.askToRevenueThreshold, setBy: "foundation input" },
   };
 
   if (safeguarded.strippedSpans.length) {
@@ -117,6 +116,116 @@ export async function generateGrantReview(input, {
   }
 
   return memo;
+}
+
+async function generateFilingThinMemo({ input, safeguard, assessment, irsRecord = null, fetchIrs, runProvider }) {
+  let record = irsRecord;
+  if (["fiscal_sponsor", "group_return", "990_n"].includes(input.filingContext)) {
+    try { record = await fetchIrs(input.ein); } catch { record = null; }
+  }
+  if (input.filingContext === "fiscal_sponsor" && record?.organization?.name) {
+    const identity = assessApplicantIdentity(input.fiscalSponsorName, record.organization.name);
+    if (!identity.ready) {
+      return terminalMemo({
+        input,
+        irsRecord: record,
+        reasonCode: "sponsor_identity_mismatch",
+        explanation: `The sponsor name and filing name do not match closely enough for reliable use. ${identity.reason}`,
+        safeguard,
+      });
+    }
+  }
+  if (input.filingContext === "990_n" && record?.organization?.name) {
+    const identity = assessApplicantIdentity(input.applicantName, record.organization.name);
+    if (!identity.ready) return terminalMemo({ input, irsRecord: record, reasonCode: "applicant_identity_mismatch", explanation: identity.reason, safeguard });
+  }
+
+  const providerResponse = await runProvider({
+    input,
+    filingSummary: {
+      ...publicFilingSummary(record || { latestFiling: null, sourceUrl: "" }),
+      reviewProfile: input.filingContext,
+      filingLimitation: assessment.reason,
+    },
+  });
+  if (providerResponse.result?.state === "NEEDS HUMAN CHECK") {
+    return terminalMemo({ input, irsRecord: record, reasonCode: providerResponse.result.reasonCode, explanation: providerResponse.result.explanation, safeguard, providerAttempts: providerResponse.attempts });
+  }
+  const modelReview = providerResponse.result;
+  if (modelReview.sourceQuality?.status === "INSUFFICIENT") {
+    return terminalMemo({ input, irsRecord: record, reasonCode: "insufficient_decision_content", explanation: modelReview.sourceQuality.explanation, safeguard, providerAttempts: providerResponse.attempts });
+  }
+
+  const profile = filingThinProfile(input.filingContext, input.fiscalSponsorName);
+  const memo = {
+    recommendation: modelReview.recommendation,
+    recommendationReason: `${modelReview.recommendationReason} ${profile.memoNote}`,
+    boardLine: modelReview.boardLine,
+    summaryClaim: modelReview.summaryClaim,
+    applicant: { legalName: input.applicantName, ein: record?.ein || input.ein, filingName: record?.organization?.name || null },
+    filingSource: record ? publicFilingSummary(record) : null,
+    claimChecks: modelReview.claims.map((claim) => ({
+      claim: claim.claim,
+      proposalQuote: claim.proposalQuote,
+      category: claim.category,
+      status: "not_checkable",
+      filingLine: null,
+      filingValue: null,
+      taxYear: record?.latestFiling?.tax_prd_yr || null,
+      filingLagYears: record?.filingLagYears ?? null,
+      question: profile.claimQuestion,
+    })),
+    financialSignals: [{ signal: profile.signal, taxYear: record?.latestFiling?.tax_prd_yr || null, inputs: [], status: "path_specific", question: profile.financialQuestion }],
+    strategyFindings: modelReview.strategyFindings,
+    eligibilityBucket: modelReview.eligibilityBucket,
+    reviewRoute: modelReview.reviewRoute,
+    nextActions: [...profile.actions, ...modelReview.nextActions],
+    humanReviewBoundary: humanCheckBoundary(),
+    safeguard: safeguardSummary(safeguard, providerResponse.attempts),
+    sourceQuality: modelReview.sourceQuality,
+    filingReviewProfile: input.filingContext,
+    askToRevenueThreshold: { value: input.askToRevenueThreshold, setBy: "foundation input" },
+  };
+  if (safeguard.strippedSpans.length) {
+    memo.recommendation = "NEEDS HUMAN CHECK";
+    memo.recommendationReason = "Embedded model-control text was removed before analysis. Staff must inspect the removed span before relying on this memo.";
+  }
+  return memo;
+}
+
+function filingThinProfile(context, sponsorName) {
+  if (context === "fiscal_sponsor") return {
+    memoNote: `The filing describes ${sponsorName}, the fiscal sponsor, not the applicant project.`,
+    signal: "Fiscal sponsor review path",
+    claimQuestion: "What project-level record substantiates this claim, given that the sponsor filing does not isolate the project?",
+    financialQuestion: "Obtain the fiscal sponsorship agreement, project-level budget, project-level staffing, and confirmation of whether the sponsor will hold the grant.",
+    actions: pathActions(["Obtain the fiscal sponsorship agreement.", "Request a project-level budget and staffing schedule.", "Confirm whether the fiscal sponsor will receive and hold the grant."], "The sponsor filing does not isolate the project."),
+  };
+  if (context === "group_return") return {
+    memoNote: "The filing describes the parent or group, not necessarily the applicant affiliate.",
+    signal: "Group return review path",
+    claimQuestion: "What affiliate-level record substantiates this claim, given that the group return does not isolate the affiliate?",
+    financialQuestion: "Obtain affiliate-level financial statements, staffing, governance, and the allocation method used in the group return.",
+    actions: pathActions(["Request affiliate-level financial statements.", "Confirm which parent-level figures apply to the affiliate."], "The group return cannot establish affiliate-level finances."),
+  };
+  if (context === "990_n") return {
+    memoNote: "Form 990-N establishes filing status and a gross-receipts ceiling, but provides no detailed financial lines.",
+    signal: "Form 990-N review path",
+    claimQuestion: "What internal record substantiates this claim, given that Form 990-N contains no detailed financial lines?",
+    financialQuestion: "Request the small filer's current budget, year-to-date statement, bank balance, staffing record, and board-approved controls appropriate to its size.",
+    actions: pathActions(["Request a current budget and year-to-date financial statement.", "Confirm the records used to support the proposal's scale claims."], "Form 990-N provides no detailed financial lines."),
+  };
+  return {
+    memoNote: "No comparable filed return is available, so the strategy review proceeds with substitute documents named explicitly.",
+    signal: "No-return or early-stage review path",
+    claimQuestion: "What current organizational record substantiates this claim without a comparable filed return?",
+    financialQuestion: "Request formation documents, current and prior budgets, year-to-date statements, bank records, payroll or contractor records, governance records, and any fiscal-sponsorship agreement.",
+    actions: pathActions(["Request formation and governance documents.", "Request current and prior budgets plus year-to-date financial statements.", "Request staffing or contractor records supporting delivery capacity."], "A filed return is unavailable or not yet comparable."),
+  };
+}
+
+function pathActions(questions, basis) {
+  return questions.map((question) => ({ question, basis, source: null }));
 }
 
 export function prepareInputs(input) {
@@ -277,6 +386,7 @@ function humanCheckAction(reasonCode, input) {
   if (reasonCode === FILING_REVIEW_STATES.NO_FILED_RETURN) return "Confirm the applicant's filing status and obtain the latest reviewable financial statements.";
   if (reasonCode === "filing_lookup_failed") return "Retry the public filing lookup or review the applicant's latest return directly before proceeding.";
   if (reasonCode === "applicant_identity_mismatch") return "Confirm the applicant's exact legal name and EIN before relying on the returned filing.";
+  if (reasonCode === "sponsor_identity_mismatch") return "Confirm the fiscal sponsor's exact legal name and EIN before relying on the returned filing.";
   if (reasonCode === "insufficient_decision_content") return "Replace placeholder or incoherent text with the decision-relevant proposal narrative before running another review.";
   return "Review the source material manually and document why automated review could not be relied upon.";
 }

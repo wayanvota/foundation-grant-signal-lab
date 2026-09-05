@@ -4,7 +4,9 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import { generateGrantReview, reviewInputSchema } from "./review.js";
-import { extractProposalText } from "./proposalFile.js";
+import { extractDocumentText, extractProposalText } from "./proposalFile.js";
+import { generateCallDesign, callDesignInputSchema } from "./callDesign.js";
+import { starterProfiles } from "../src/ruleSpec.js";
 
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || "https://wayan.com,https://www.wayan.com")
   .split(",")
@@ -26,7 +28,19 @@ const upload = multer({
   },
 });
 
-export function createApp({ generateReview = generateGrantReview } = {}) {
+const callDesignUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 6 * 1024 * 1024,
+    files: 1,
+    fields: 4,
+    parts: 5,
+    fieldNameSize: 100,
+    fieldSize: 180 * 1024,
+  },
+});
+
+export function createApp({ generateReview = generateGrantReview, generateDesign = generateCallDesign } = {}) {
   const app = express();
   app.set("trust proxy", 1);
   app.use(express.json({ limit: "120kb" }));
@@ -58,11 +72,45 @@ export function createApp({ generateReview = generateGrantReview } = {}) {
     response.json({
       name: "Foundation Grant Signal Lab",
       decision: "Should this foundation advance this proposal to real diligence?",
+      modes: ["CALL DESIGN", "INTAKE SCREEN", "DILIGENCE MEMO", "COHORT REPORT"],
+      availableModes: ["CALL DESIGN", "DILIGENCE MEMO"],
       recommendations: ["ADVANCE", "HOLD FOR DILIGENCE", "DECLINE", "NEEDS HUMAN CHECK"],
       storage: "stateless",
       publicHistory: false,
       filingProvider: "ProPublica Nonprofit Explorer",
     });
+  });
+
+  app.get("/api/starter-profiles", (_request, response) => {
+    response.json({ profiles: starterProfiles, fictional: true });
+  });
+
+  app.post("/api/call-designs", reviewRateLimit, callDesignUpload.single("ruleFile"), async (request, response) => {
+    let ruleFromFile = "";
+    try {
+      ruleFromFile = request.file ? await extractDocumentText(request.file, { subject: "draft rule", minimumLength: 20, maximumLength: 40_000 }) : "";
+    } catch (error) {
+      response.status(error.statusCode || 400).json({ error: error.publicMessage || error.message });
+      return;
+    }
+
+    try {
+      const candidateProfiles = parseJsonField(request.body?.candidateProfiles, []);
+      const funnel = parseJsonField(request.body?.funnel, {});
+      const body = {
+        ruleText: [request.body?.ruleText, ruleFromFile].filter(Boolean).join("\n\n"),
+        candidateProfiles,
+        funnel,
+      };
+      const parsed = callDesignInputSchema.safeParse(body);
+      if (!parsed.success) {
+        response.status(400).json({ error: "The call-design input is incomplete or invalid.", details: parsed.error.flatten() });
+        return;
+      }
+      response.status(200).json(await generateDesign(parsed.data));
+    } catch (error) {
+      response.status(error.statusCode || 500).json({ error: error.publicMessage || (error instanceof Error ? error.message : "Call design failed") });
+    }
   });
 
   app.post("/api/reviews", reviewRateLimit, upload.single("proposalFile"), async (request, response) => {
@@ -100,7 +148,7 @@ export function createApp({ generateReview = generateGrantReview } = {}) {
   app.use((error, _request, response, next) => {
     if (error instanceof multer.MulterError) {
       const messages = {
-        LIMIT_FILE_SIZE: "The proposal file must be 6 MB or smaller.",
+        LIMIT_FILE_SIZE: "The uploaded file must be 6 MB or smaller.",
         LIMIT_FILE_COUNT: "Upload only one proposal file.",
         LIMIT_FIELD_COUNT: "The review form contains too many fields.",
         LIMIT_PART_COUNT: "The review form contains too many parts.",
@@ -167,6 +215,17 @@ function pruneReviewBuckets(now) {
     if (now > bucket.resetAt) reviewBuckets.delete(key);
   }
   lastBucketPruneAt = now;
+}
+
+function parseJsonField(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value !== "string") return value;
+  try { return JSON.parse(value); } catch {
+    const error = new Error("One of the structured form fields is not valid JSON.");
+    error.statusCode = 400;
+    error.publicMessage = error.message;
+    throw error;
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) startServer();

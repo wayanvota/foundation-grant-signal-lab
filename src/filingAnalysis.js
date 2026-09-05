@@ -1,11 +1,11 @@
 import { filingLine, filingLines } from "./irs990.js";
 
-const CHECKABLE_CATEGORIES = new Set(["annual_budget", "staff_size", "program_scale", "years_of_operation"]);
+const CHECKABLE_CATEGORIES = new Set(["annual_budget", "grant_request", "staff_size", "program_scale", "years_of_operation"]);
 
-export function compareClaimsToFiling(claims, irsRecord) {
+export function compareClaimsToFiling(claims, irsRecord, { askToRevenueThreshold = 0.25 } = {}) {
   const filing = irsRecord.latestFiling;
   const taxYear = Number(filing.tax_prd_yr || String(filing.tax_prd).slice(0, 4));
-  return claims.map((claim) => compareClaim(claim, { filing, taxYear, irsRecord }));
+  return claims.map((claim) => compareClaim(claim, { filing, taxYear, irsRecord, askToRevenueThreshold }));
 }
 
 export function calculateFinancialSignals(irsRecord) {
@@ -27,7 +27,7 @@ export function calculateFinancialSignals(irsRecord) {
   return questions.filter(Boolean);
 }
 
-function compareClaim(claim, { filing, taxYear, irsRecord }) {
+function compareClaim(claim, { filing, taxYear, irsRecord, askToRevenueThreshold }) {
   const base = {
     claim: claim.claim,
     proposalQuote: claim.proposalQuote,
@@ -66,6 +66,26 @@ function compareClaim(claim, { filing, taxYear, irsRecord }) {
       questionLabel: "annual budget and reported total revenue",
       format: formatCurrency,
     });
+  }
+
+  if (claim.category === "grant_request") {
+    const revenue = filingLine(filing, filingLines.totalRevenue, "Total revenue");
+    if (!revenue || claim.value === null) return notCheckable(base, revenue?.label || null);
+    const ratio = revenue.value === 0 ? null : claim.value / Math.abs(revenue.value);
+    const ratioText = ratio === null ? "not calculable because filed revenue is zero" : formatPercent(ratio);
+    const fired = ratio === null || ratio > askToRevenueThreshold;
+    return {
+      ...base,
+      status: fired ? "contradicted" : "supported",
+      filingLine: revenue.label,
+      filingField: revenue.key,
+      filingValue: revenue.value,
+      question: fired
+        ? `The request-to-revenue ratio is ${ratioText}, above or unable to satisfy the foundation-set ${formatPercent(askToRevenueThreshold)} review threshold. What current revenue, cash-flow, and delivery evidence supports an award at this scale?`
+        : `The request equals ${ratioText} of ${taxYear} total revenue, within the foundation-set ${formatPercent(askToRevenueThreshold)} review threshold. What changed since the filing period?`,
+      comparisonBasis: "grant request as a share of reported total revenue",
+      threshold: { value: askToRevenueThreshold, setBy: "foundation input", fired },
+    };
   }
 
   if (claim.category === "staff_size") {
