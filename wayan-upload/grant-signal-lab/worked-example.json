@@ -1,0 +1,819 @@
+{
+  "artifact": "worked_example",
+  "schema_version": "1.0.0",
+  "generated_at": "2026-09-05T12:00:00.000Z",
+  "generator": "foundation-grant-signal-lab",
+  "generator_version": "development",
+  "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+  "ruleSpec": {
+    "artifact": "rule_spec",
+    "schema_version": "1.0.0",
+    "generated_at": "2026-09-05T12:00:00.000Z",
+    "generator": "foundation-grant-signal-lab",
+    "generator_version": "development",
+    "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+    "name": "Common Ground Opportunity Fund",
+    "clauses": [
+      {
+        "id": "C001",
+        "sourceSentence": "Applicants must be based in the United States.",
+        "fact": "geography",
+        "operator": "contains_any",
+        "value": [
+          "Alabama",
+          "Alaska",
+          "Arizona",
+          "Arkansas",
+          "California",
+          "Colorado",
+          "Connecticut",
+          "Delaware",
+          "Florida",
+          "Georgia",
+          "Hawaii",
+          "Idaho",
+          "Illinois",
+          "Indiana",
+          "Iowa",
+          "Kansas",
+          "Kentucky",
+          "Louisiana",
+          "Maine",
+          "Maryland",
+          "Massachusetts",
+          "Michigan",
+          "Minnesota",
+          "Mississippi",
+          "Missouri",
+          "Montana",
+          "Nebraska",
+          "Nevada",
+          "New Hampshire",
+          "New Jersey",
+          "New Mexico",
+          "New York",
+          "North Carolina",
+          "North Dakota",
+          "Ohio",
+          "Oklahoma",
+          "Oregon",
+          "Pennsylvania",
+          "Rhode Island",
+          "South Carolina",
+          "South Dakota",
+          "Tennessee",
+          "Texas",
+          "Utah",
+          "Vermont",
+          "Virginia",
+          "Washington",
+          "West Virginia",
+          "Wisconsin",
+          "Wyoming",
+          "District of Columbia",
+          "United States"
+        ],
+        "mandatory": true,
+        "reasonCode": "GEO_INELIGIBLE",
+        "selfScreenQuestion": "Is your organization based in the United States?"
+      },
+      {
+        "id": "C002",
+        "sourceSentence": "Applicants must work in youth learning, food security, or maternal health.",
+        "fact": "issue_area",
+        "operator": "contains_any",
+        "value": [
+          "youth learning",
+          "food security",
+          "maternal health"
+        ],
+        "mandatory": true,
+        "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+        "selfScreenQuestion": "Does your proposed work address youth learning, food security, or maternal health?"
+      },
+      {
+        "id": "C003",
+        "sourceSentence": "Applicants must be a 501(c)(3) public charity or a fiscally sponsored project.",
+        "fact": "org_type",
+        "operator": "contains_any",
+        "value": [
+          "501(c)(3)",
+          "fiscally sponsored project"
+        ],
+        "mandatory": true,
+        "reasonCode": "ORG_TYPE_INELIGIBLE",
+        "selfScreenQuestion": "Are you a 501(c)(3) public charity or a fiscally sponsored project?"
+      },
+      {
+        "id": "C004",
+        "sourceSentence": "Applicants must have operated for at least two years.",
+        "fact": "years_operating",
+        "operator": "gte",
+        "value": 2,
+        "mandatory": true,
+        "reasonCode": "OPERATING_HISTORY_SHORT",
+        "selfScreenQuestion": "Has your organization or project operated for at least two years?"
+      }
+    ],
+    "uncompiledLanguage": [
+      {
+        "sourceSentence": "Priority will be given to community-rooted organizations with bold leadership.",
+        "reason": "Community-rootedness and bold leadership require judgment and cannot be verified as literal eligibility facts.",
+        "suggestion": "If local governance matters, name a factual test such as the required share of board members who live in the service area."
+      }
+    ],
+    "custom_reason_codes": {},
+    "batch_id": null,
+    "submission_id": null,
+    "stage_timestamps": null,
+    "referral_source": null,
+    "self_screen_outcome": null,
+    "final_disposition": null
+  },
+  "exclusionReport": {
+    "artifact": "exclusion_report",
+    "schema_version": "1.0.0",
+    "generated_at": "2026-09-05T12:00:00.000Z",
+    "generator": "foundation-grant-signal-lab",
+    "generator_version": "development",
+    "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+    "results": [
+      {
+        "profile": {
+          "organizationName": "Harbor Youth Learning",
+          "ein": "",
+          "filingRelationship": "standalone",
+          "annualBudget": 2400000,
+          "yearsOperating": 7,
+          "geography": "United States",
+          "issueArea": "youth learning",
+          "orgType": "501(c)(3)",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "ADMIT",
+          "decidingClauseId": null,
+          "decidingClause": null,
+          "reasonCode": null,
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "united states"
+            },
+            {
+              "clauseId": "C002",
+              "result": "PASS",
+              "actual": "youth learning"
+            },
+            {
+              "clauseId": "C003",
+              "result": "PASS",
+              "actual": "501(c)(3)"
+            },
+            {
+              "clauseId": "C004",
+              "result": "PASS",
+              "actual": 7
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Mesa Food Futures",
+          "ein": "",
+          "filingRelationship": "fiscal_sponsor",
+          "annualBudget": 180000,
+          "yearsOperating": 1,
+          "geography": "Arizona",
+          "issueArea": "food security",
+          "orgType": "fiscally sponsored project",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C004",
+          "decidingClause": "Applicants must have operated for at least two years.",
+          "reasonCode": "OPERATING_HISTORY_SHORT",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "arizona"
+            },
+            {
+              "clauseId": "C002",
+              "result": "PASS",
+              "actual": "food security"
+            },
+            {
+              "clauseId": "C003",
+              "result": "PASS",
+              "actual": "fiscally sponsored project"
+            },
+            {
+              "clauseId": "C004",
+              "result": "FAIL",
+              "actual": 1
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Great Lakes Housing Lab",
+          "ein": "",
+          "filingRelationship": "group_return",
+          "annualBudget": 920000,
+          "yearsOperating": 4,
+          "geography": "Michigan",
+          "issueArea": "housing",
+          "orgType": "501(c)(3) affiliate",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "michigan"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "housing"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Delta Maternal Health Circle",
+          "ein": "",
+          "filingRelationship": "990_n",
+          "annualBudget": 46000,
+          "yearsOperating": 2,
+          "geography": "Mississippi",
+          "issueArea": "maternal health",
+          "orgType": "501(c)(3)",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "ADMIT",
+          "decidingClauseId": null,
+          "decidingClause": null,
+          "reasonCode": null,
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "mississippi"
+            },
+            {
+              "clauseId": "C002",
+              "result": "PASS",
+              "actual": "maternal health"
+            },
+            {
+              "clauseId": "C003",
+              "result": "PASS",
+              "actual": "501(c)(3)"
+            },
+            {
+              "clauseId": "C004",
+              "result": "PASS",
+              "actual": 2
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Appalachian Broadband Cooperative",
+          "ein": "",
+          "filingRelationship": "standalone",
+          "annualBudget": 3600000,
+          "yearsOperating": 5,
+          "geography": "Kentucky",
+          "issueArea": "digital access",
+          "orgType": "cooperative",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "kentucky"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "digital access"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Pacific Climate Justice Network",
+          "ein": "",
+          "filingRelationship": "fiscal_sponsor",
+          "annualBudget": 640000,
+          "yearsOperating": 3,
+          "geography": "California",
+          "issueArea": "climate justice",
+          "orgType": "fiscally sponsored project",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "california"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "climate justice"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Prairie Arts Exchange",
+          "ein": "",
+          "filingRelationship": "990_n",
+          "annualBudget": 38000,
+          "yearsOperating": 8,
+          "geography": "Kansas",
+          "issueArea": "arts",
+          "orgType": "501(c)(3)",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "kansas"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "arts"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Metro Reentry Partnership",
+          "ein": "",
+          "filingRelationship": "standalone",
+          "annualBudget": 5100000,
+          "yearsOperating": 12,
+          "geography": "New York",
+          "issueArea": "reentry",
+          "orgType": "501(c)(3)",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "new york"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "reentry"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Border Water Commons",
+          "ein": "",
+          "filingRelationship": "group_return",
+          "annualBudget": 1300000,
+          "yearsOperating": 2,
+          "geography": "New Mexico",
+          "issueArea": "water access",
+          "orgType": "501(c)(3) affiliate",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "new mexico"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "water access"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Rural Disability Advocates",
+          "ein": "",
+          "filingRelationship": "standalone",
+          "annualBudget": 870000,
+          "yearsOperating": 1,
+          "geography": "West Virginia",
+          "issueArea": "disability rights",
+          "orgType": "501(c)(3)",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "west virginia"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "disability rights"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Coastal Workforce Guild",
+          "ein": "",
+          "filingRelationship": "standalone",
+          "annualBudget": 7400000,
+          "yearsOperating": 16,
+          "geography": "North Carolina",
+          "issueArea": "workforce development",
+          "orgType": "501(c)(6)",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "north carolina"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "workforce development"
+            }
+          ]
+        }
+      },
+      {
+        "profile": {
+          "organizationName": "Neighborhood Data Stewards",
+          "ein": "",
+          "filingRelationship": "fiscal_sponsor",
+          "annualBudget": 290000,
+          "yearsOperating": 0.5,
+          "geography": "Illinois",
+          "issueArea": "data justice",
+          "orgType": "fiscally sponsored project",
+          "description": "Fictional candidate profile for rule testing."
+        },
+        "outcome": {
+          "status": "EXCLUDE",
+          "decidingClauseId": "C002",
+          "decidingClause": "Applicants must work in youth learning, food security, or maternal health.",
+          "reasonCode": "ISSUE_AREA_OUT_OF_SCOPE",
+          "missingFact": null,
+          "evaluations": [
+            {
+              "clauseId": "C001",
+              "result": "PASS",
+              "actual": "illinois"
+            },
+            {
+              "clauseId": "C002",
+              "result": "FAIL",
+              "actual": "data justice"
+            }
+          ]
+        }
+      }
+    ],
+    "clauseSummary": [
+      {
+        "clauseId": "C002",
+        "sourceSentence": "Applicants must work in youth learning, food security, or maternal health.",
+        "excluded": 9,
+        "indeterminate": 0
+      },
+      {
+        "clauseId": "C004",
+        "sourceSentence": "Applicants must have operated for at least two years.",
+        "excluded": 1,
+        "indeterminate": 0
+      },
+      {
+        "clauseId": "C001",
+        "sourceSentence": "Applicants must be based in the United States.",
+        "excluded": 0,
+        "indeterminate": 0
+      },
+      {
+        "clauseId": "C003",
+        "sourceSentence": "Applicants must be a 501(c)(3) public charity or a fiscally sponsored project.",
+        "excluded": 0,
+        "indeterminate": 0
+      }
+    ],
+    "clauseFrequency": [
+      {
+        "clauseId": "C002",
+        "sourceSentence": "Applicants must work in youth learning, food security, or maternal health.",
+        "excluded": 9,
+        "indeterminate": 0
+      },
+      {
+        "clauseId": "C004",
+        "sourceSentence": "Applicants must have operated for at least two years.",
+        "excluded": 3,
+        "indeterminate": 0
+      },
+      {
+        "clauseId": "C003",
+        "sourceSentence": "Applicants must be a 501(c)(3) public charity or a fiscally sponsored project.",
+        "excluded": 2,
+        "indeterminate": 0
+      },
+      {
+        "clauseId": "C001",
+        "sourceSentence": "Applicants must be based in the United States.",
+        "excluded": 0,
+        "indeterminate": 0
+      }
+    ],
+    "impactReport": {
+      "artifact": "rule_impact_report",
+      "schema_version": "1.0.0",
+      "generated_at": "2026-09-05T12:00:00.000Z",
+      "generator": "foundation-grant-signal-lab",
+      "generator_version": "development",
+      "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+      "filingThin": {
+        "count": 8,
+        "excluded": 7,
+        "exclusionRate": 0.875
+      },
+      "other": {
+        "count": 4,
+        "excluded": 3,
+        "exclusionRate": 0.75
+      },
+      "differentialPercentagePoints": 12.5,
+      "clauseDrivers": [
+        {
+          "clauseId": "C002",
+          "sourceSentence": "Applicants must work in youth learning, food security, or maternal health.",
+          "excluded": 9,
+          "indeterminate": 0
+        },
+        {
+          "clauseId": "C004",
+          "sourceSentence": "Applicants must have operated for at least two years.",
+          "excluded": 1,
+          "indeterminate": 0
+        }
+      ],
+      "footer": {
+        "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+        "schema_version": "1.0.0",
+        "generated_at": "2026-09-05T12:00:00.000Z",
+        "generator_version": "development"
+      }
+    },
+    "footer": {
+      "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+      "schema_version": "1.0.0",
+      "generated_at": "2026-09-05T12:00:00.000Z",
+      "generator_version": "development"
+    }
+  },
+  "selfScreen": {
+    "artifact": "self_screen",
+    "schema_version": "1.0.0",
+    "generated_at": "2026-09-05T12:00:00.000Z",
+    "generator": "foundation-grant-signal-lab",
+    "generator_version": "development",
+    "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+    "questions": [
+      {
+        "clauseId": "C001",
+        "question": "Is your organization based in the United States?",
+        "fact": "geography",
+        "operator": "contains_any",
+        "value": [
+          "Alabama",
+          "Alaska",
+          "Arizona",
+          "Arkansas",
+          "California",
+          "Colorado",
+          "Connecticut",
+          "Delaware",
+          "Florida",
+          "Georgia",
+          "Hawaii",
+          "Idaho",
+          "Illinois",
+          "Indiana",
+          "Iowa",
+          "Kansas",
+          "Kentucky",
+          "Louisiana",
+          "Maine",
+          "Maryland",
+          "Massachusetts",
+          "Michigan",
+          "Minnesota",
+          "Mississippi",
+          "Missouri",
+          "Montana",
+          "Nebraska",
+          "Nevada",
+          "New Hampshire",
+          "New Jersey",
+          "New Mexico",
+          "New York",
+          "North Carolina",
+          "North Dakota",
+          "Ohio",
+          "Oklahoma",
+          "Oregon",
+          "Pennsylvania",
+          "Rhode Island",
+          "South Carolina",
+          "South Dakota",
+          "Tennessee",
+          "Texas",
+          "Utah",
+          "Vermont",
+          "Virginia",
+          "Washington",
+          "West Virginia",
+          "Wisconsin",
+          "Wyoming",
+          "District of Columbia",
+          "United States"
+        ]
+      },
+      {
+        "clauseId": "C002",
+        "question": "Does your proposed work address youth learning, food security, or maternal health?",
+        "fact": "issue_area",
+        "operator": "contains_any",
+        "value": [
+          "youth learning",
+          "food security",
+          "maternal health"
+        ]
+      },
+      {
+        "clauseId": "C003",
+        "question": "Are you a 501(c)(3) public charity or a fiscally sponsored project?",
+        "fact": "org_type",
+        "operator": "contains_any",
+        "value": [
+          "501(c)(3)",
+          "fiscally sponsored project"
+        ]
+      },
+      {
+        "clauseId": "C004",
+        "question": "Has your organization or project operated for at least two years?",
+        "fact": "years_operating",
+        "operator": "gte",
+        "value": 2
+      }
+    ],
+    "plainText": "1. Is your organization based in the United States? [C001]\n2. Does your proposed work address youth learning, food security, or maternal health? [C002]\n3. Are you a 501(c)(3) public charity or a fiscally sponsored project? [C003]\n4. Has your organization or project operated for at least two years? [C004]",
+    "html": "<ol>\n  <li data-clause-id=\"C001\">Is your organization based in the United States?</li>\n  <li data-clause-id=\"C002\">Does your proposed work address youth learning, food security, or maternal health?</li>\n  <li data-clause-id=\"C003\">Are you a 501(c)(3) public charity or a fiscally sponsored project?</li>\n  <li data-clause-id=\"C004\">Has your organization or project operated for at least two years?</li>\n</ol>",
+    "footer": {
+      "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+      "schema_version": "1.0.0",
+      "generated_at": "2026-09-05T12:00:00.000Z",
+      "generator_version": "development"
+    }
+  },
+  "funnelProjection": {
+    "artifact": "funnel_projection",
+    "schema_version": "1.0.0",
+    "generated_at": "2026-09-05T12:00:00.000Z",
+    "generator": "foundation-grant-signal-lab",
+    "generator_version": "development",
+    "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+    "inputs": {
+      "grantSize": 250000,
+      "totalPool": 10000000,
+      "expectedApplications": 200,
+      "minutesPerFirstRead": 20,
+      "hoursPerApplication": 8,
+      "loadedHourlyCost": 65,
+      "applicantHoursPerApplication": 24,
+      "applicantHourlyValue": 35
+    },
+    "inputSources": {
+      "grantSize": "tool_default",
+      "totalPool": "tool_default",
+      "expectedApplications": "tool_default",
+      "minutesPerFirstRead": "tool_default",
+      "hoursPerApplication": "tool_default",
+      "loadedHourlyCost": "tool_default",
+      "applicantHoursPerApplication": "tool_default",
+      "applicantHourlyValue": "tool_default"
+    },
+    "defaultSources": {
+      "grantSize": "Tool planning default: $250,000",
+      "totalPool": "Tool planning default: $10 million",
+      "expectedApplications": "Tool planning default: 200 applications",
+      "minutesPerFirstRead": "Tool planning default: 20 minutes",
+      "hoursPerApplication": "Tool planning default: 8 hours",
+      "loadedHourlyCost": "Tool planning default: $65 per hour",
+      "applicantHoursPerApplication": "Tool planning default: 24 hours",
+      "applicantHourlyValue": "Tool planning default: $35 per hour"
+    },
+    "outputs": {
+      "grantsAvailable": 40,
+      "reviewerHours": 1666.6666666666667,
+      "reviewerCost": 108333.33333333334,
+      "applicantHours": 4800,
+      "applicantCost": 168000,
+      "applicantCostPerDollarGranted": 0.0168
+    },
+    "arithmetic": [
+      "Grants available = floor(10000000 / 250000) = 40",
+      "Reviewer hours = 200 × (20 / 60 + 8) = 1666.67",
+      "Applicant hours = 200 × 24 = 4800",
+      "Applicant cost = 4800 × 35 = 168000",
+      "Applicant labor cost per dollar granted = 168000 / 10000000 = 0.0168"
+    ],
+    "footer": {
+      "rule_hash": "sha256:dc6445c1587256bab9b2ded1ac80f4ddb75d6d39affd0446f3da402b3fc5b9df",
+      "schema_version": "1.0.0",
+      "generated_at": "2026-09-05T12:00:00.000Z",
+      "generator_version": "development"
+    }
+  }
+}

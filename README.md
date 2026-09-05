@@ -1,10 +1,10 @@
 # Foundation Grant Signal Lab
 
-Foundation Grant Signal Lab supports a program officer across an open call. Version 2 ships Call Design first while retaining the existing Diligence Memo.
+Foundation Grant Signal Lab supports a program officer across an open call. The public product contains Call Design and Diligence Memo.
 
 Call Design compiles draft eligibility prose into a readable `RuleSpec`, runs deterministic eligibility code against fictional or supplied candidate profiles, reports exclusion effects, generates self-screen questions, and projects reviewer and applicant burden. Diligence Memo reads a proposal against available Form 990 evidence and the foundation's stated strategy.
 
-The four-mode product sequence is Call Design, Intake Screen, Diligence Memo, and Cohort Report. This release enables Call Design and Diligence Memo. Intake Screen and Cohort Report remain visible as later phases, rather than appearing to be available.
+Intake Screen and Cohort Report remain outside the public interface until a live call can supply real submission and disposition data. The Method section states that boundary without presenting disabled controls.
 
 Live site: [wayan.com/grant-signal-lab](https://wayan.com/grant-signal-lab/)
 
@@ -32,18 +32,22 @@ Proposal-to-filing divergence is always phrased as a program officer's question.
 Inputs:
 
 - Draft eligibility text, pasted or uploaded as TXT, Markdown, PDF, or DOCX
-- Optional candidate profiles, entered manually or uploaded as CSV
+- Optional candidate profiles, entered manually or uploaded as CSV, up to 500 rows
+- A saved RuleSpec or SessionBundle, with major-version checking and migration warnings
 - Foundation-set grant pool, grant size, application volume, review-time, and labor-cost assumptions
 
 Outputs:
 
-- Readable `RuleSpec`, including exact source sentences and uncompiled language
+- Versioned, hashed `RuleSpec`, including exact source sentences, uncompiled language, and suggested factual substitutes for human review
 - Candidate exclusion report with reason codes and deciding clauses
+- Clause-frequency table showing how many profiles each clause would independently exclude
 - Rule Impact Report comparing filing-thin profiles with the rest of the candidate set
 - Self-screen questions as JSON, plain text, and copy-ready HTML
 - Funnel and burden projection with visible arithmetic
 - Intake instrumentation plan
 - Downloadable RuleSpec and session bundle; the server retains neither
+
+The complete fictional [worked example](https://wayan.com/grant-signal-lab/worked-example.html) can be inspected without running the compiler. The artifact contract and migration behavior are documented in [`docs/SCHEMA.md`](docs/SCHEMA.md).
 
 ## Diligence inputs
 
@@ -97,7 +101,9 @@ CI runs a repository-wide publication constraint check, syntax checks, tests, an
 - `src/reviewSchema.js`: structured memo and traceability validation
 - `src/provider.js`: live review call, timeout, and same-provider schema retry
 - `src/ruleCompiler.js`: constrained prose-to-RuleSpec compilation with quote validation
-- `src/ruleSpec.js`: deterministic evaluator, self-screen generator, impact report, starter profiles, funnel arithmetic, and reason codes
+- `src/artifacts.js`: schema metadata, version inspection, report envelopes, and stable rule hashes
+- `src/reasonCodes.js`: append-only shipped reason-code enum
+- `src/ruleSpec.js`: deterministic evaluator, self-screen generator, impact report, starter profiles, and funnel arithmetic
 - `api/callDesign.js`: stateless Mode 1 orchestration
 - `api/review.js`: stateless orchestration and terminal human-check memos
 - `api/proposalFile.js`: in-memory TXT, Markdown, PDF, and DOCX extraction
@@ -127,7 +133,7 @@ npm test
 npm run build:frontend
 ```
 
-The current suite covers filing exceptions, claim comparison, financial input visibility, prompt injection handling, provider retries, fixture privacy, and publication constraints.
+The current suite covers filing exceptions, claim comparison, financial input visibility, prompt injection handling, provider retries, fixture privacy, publication constraints, artifact migration, a byte-identical 20-run determinism gate, and 100-profile self-screen parity at boundaries and missing values.
 
 The adversarial matrix adds source-quality stops, legal-name/EIN identity checks, Unicode and zero-width prompt obfuscation, role tags, encoded commands, prompt extraction, literal XSS and SQL strings, malformed and oversized requests, hostile origins, excessive multipart fields, unsupported uploads, multilingual proposals, complex claims, and explicit eligibility conflicts. Run deterministic coverage with `npm test` and paid end-to-end provider coverage with `npm run test:adversarial:live`.
 

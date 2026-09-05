@@ -36,4 +36,4 @@ The ask-to-revenue threshold is a foundation-set input. The memo prints the valu
 
 ## Deferred by the PRD build order
 
-Mode 2, Intake Screen, and Mode 4, Cohort Report, remain visible but disabled in the interface. Their shared reason-code and instrumentation foundations ship in Mode 1. Neither mode is represented as complete.
+Mode 2, Intake Screen, and Mode 4, Cohort Report, remain later-phase work. Their shared reason-code and instrumentation foundations ship in Mode 1, but their disabled tabs were removed from the public interface during the September 2026 hardening pass. The Method section now states the boundary in prose.

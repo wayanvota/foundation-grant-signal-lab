@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildWorkedExample } from "./worked-example.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = path.join(root, "frontend");
@@ -22,6 +23,7 @@ async function copyStatic(target) {
     path.join(target, "config.js"),
     `window.GRANT_SIGNAL_CONFIG = {\n  apiBaseUrl: ${JSON.stringify(apiBaseUrl)},\n};\n`,
   );
+  await buildWorkedExample(target);
 }
 
 await copyStatic(dist);

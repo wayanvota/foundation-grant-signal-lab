@@ -20,8 +20,36 @@ test("Mode 1 returns the complete stateless call-design package", async () => {
   assert.equal(result.exclusionReport.results.length, 12);
   assert.equal(result.selfScreen.questions.length, 2);
   assert.equal(result.instrumentationPlan.some((item) => item.field === "reason_code"), true);
+  assert.equal(result.ruleSpec.schema_version, "1.0.0");
+  assert.equal(result.exclusionReport.rule_hash, result.ruleSpec.rule_hash);
+  assert.equal(result.exclusionReport.footer.rule_hash, result.ruleSpec.rule_hash);
+  assert.equal(result.selfScreen.rule_hash, result.ruleSpec.rule_hash);
+  assert.equal(result.sessionBundle.artifact, "session_bundle");
   assert.match(result.method, /No model participated/);
   assert.match(result.privacy, /Nothing was saved/);
+});
+
+test("Retrospective Rule Test accepts 500 profiles and ranks independent clause frequency", async () => {
+  const profiles = Array.from({ length: 500 }, (_, index) => ({
+    organizationName: `Past applicant ${index + 1}`,
+    filingRelationship: "standalone",
+    annualBudget: 500000,
+    yearsOperating: index % 4,
+    geography: index % 4 === 0 ? "Ohio" : "North Carolina",
+    issueArea: "health",
+    orgType: "501(c)(3)",
+    description: "Fictional retrospective profile.",
+  }));
+  const result = await generateCallDesign({ ruleText, candidateProfiles: profiles, funnel: {} }, { compileRule: async () => ({ ruleSpec: compiled, safeguard: { status: "passed", strippedSpanCount: 0 } }) });
+  assert.equal(result.exclusionReport.results.length, 500);
+  assert.equal(result.exclusionReport.clauseFrequency[0].clauseId, "C002");
+  assert.equal(result.exclusionReport.clauseFrequency[0].excluded, 250);
+  assert.equal(result.exclusionReport.clauseFrequency.find((item) => item.clauseId === "C001").excluded, 125);
+});
+
+test("Retrospective Rule Test refuses a 501st profile", async () => {
+  const profiles = Array.from({ length: 501 }, (_, index) => ({ organizationName: `Past applicant ${index + 1}` }));
+  await assert.rejects(() => generateCallDesign({ ruleText, candidateProfiles: profiles, funnel: {} }, { compileRule: async () => ({ ruleSpec: compiled }) }), /Too big|500|invalid/i);
 });
 
 test("values language remains uncompiled rather than becoming a proxy", async () => {

@@ -1,17 +1,9 @@
 import { z } from "zod";
+import { artifactMetadata, computeRuleHash, inspectArtifactVersion, migrationNotice, RESERVED_FIELDS, SCHEMA_VERSION } from "./artifacts.js";
+import { CUSTOM_REASON_CODE_PATTERN, isReasonCode, REASON_CODES } from "./reasonCodes.js";
 
-export const REASON_CODES = Object.freeze([
-  "GEO_INELIGIBLE",
-  "ISSUE_AREA_OUT_OF_SCOPE",
-  "ORG_TYPE_INELIGIBLE",
-  "BUDGET_BELOW_FLOOR",
-  "BUDGET_ABOVE_CEILING",
-  "OPERATING_HISTORY_SHORT",
-  "DUPLICATE_SUBMISSION",
-  "INCOMPLETE_REQUIRED_ELEMENT",
-  "IDENTITY_UNVERIFIED",
-  "INDETERMINATE_MISSING_FACT",
-]);
+export { REASON_CODES } from "./reasonCodes.js";
+const MISSING_FACT_REASON_CODE = REASON_CODES[REASON_CODES.length - 1];
 
 export const FACT_FIELDS = Object.freeze([
   "geography",
@@ -27,23 +19,36 @@ export const ruleClauseSchema = z.object({
   sourceSentence: z.string().min(1).max(1200),
   fact: z.enum(FACT_FIELDS),
   operator: z.enum(["equals", "in", "not_in", "contains_any", "gte", "lte"]),
-  value: z.union([z.string(), z.number(), z.array(z.string()).min(1).max(30)]),
+  value: z.union([z.string(), z.number(), z.array(z.string()).min(1).max(60)]),
   mandatory: z.boolean(),
-  reasonCode: z.enum(REASON_CODES),
+  reasonCode: z.string().refine((value) => REASON_CODES.includes(value) || CUSTOM_REASON_CODE_PATTERN.test(value), "Reason code must be shipped or start with CUSTOM_."),
   selfScreenQuestion: z.string().min(1).max(500),
 }).strict();
 
 export const uncompiledLanguageSchema = z.object({
   sourceSentence: z.string().min(1).max(1200),
   reason: z.string().min(1).max(500),
+  suggestion: z.string().min(1).max(500).default("If this matters to eligibility, replace it with a fact an applicant can answer and staff can verify."),
 }).strict();
 
 export const ruleSpecSchema = z.object({
-  version: z.literal("1.0"),
+  artifact: z.literal("rule_spec"),
+  schema_version: z.string().regex(/^1\.(?:\d+)\.(?:\d+)$/),
+  generated_at: z.string().datetime(),
+  generator: z.literal("foundation-grant-signal-lab"),
+  generator_version: z.string().min(1).max(80),
+  rule_hash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
   name: z.string().min(1).max(160),
   clauses: z.array(ruleClauseSchema).max(40),
   uncompiledLanguage: z.array(uncompiledLanguageSchema).max(40),
-}).strict().superRefine((spec, context) => {
+  custom_reason_codes: z.record(z.string(), z.string().min(1).max(500)).default({}),
+  batch_id: z.null(),
+  submission_id: z.null(),
+  stage_timestamps: z.null(),
+  referral_source: z.null(),
+  self_screen_outcome: z.null(),
+  final_disposition: z.null(),
+}).passthrough().superRefine((spec, context) => {
   const ids = new Set();
   for (const [index, clause] of spec.clauses.entries()) {
     if (ids.has(clause.id)) context.addIssue({ code: "custom", path: ["clauses", index, "id"], message: "Clause IDs must be unique." });
@@ -51,19 +56,71 @@ export const ruleSpecSchema = z.object({
     if (["gte", "lte"].includes(clause.operator) && typeof clause.value !== "number") {
       context.addIssue({ code: "custom", path: ["clauses", index, "value"], message: "Numeric operators require a numeric value." });
     }
+    if (!isReasonCode(clause.reasonCode, spec.custom_reason_codes)) {
+      context.addIssue({ code: "custom", path: ["clauses", index, "reasonCode"], message: "Custom reason codes must be defined in custom_reason_codes." });
+    }
   }
+  for (const code of Object.keys(spec.custom_reason_codes)) {
+    if (!CUSTOM_REASON_CODE_PATTERN.test(code)) context.addIssue({ code: "custom", path: ["custom_reason_codes", code], message: "Custom reason codes must start with CUSTOM_." });
+  }
+  if (spec.rule_hash !== computeRuleHash(spec.clauses)) context.addIssue({ code: "custom", path: ["rule_hash"], message: "rule_hash does not match the compiled clauses." });
 });
+
+export const compiledRuleDraftSchema = z.object({
+  version: z.literal("1.0").optional(),
+  name: z.string().min(1).max(160),
+  clauses: z.array(ruleClauseSchema).max(40),
+  uncompiledLanguage: z.array(uncompiledLanguageSchema).max(40),
+  custom_reason_codes: z.record(z.string(), z.string().min(1).max(500)).default({}),
+}).strict();
+
+export function finalizeRuleSpec(raw, options = {}) {
+  const draft = compiledRuleDraftSchema.parse(raw);
+  const spec = {
+    ...artifactMetadata("rule_spec", options),
+    rule_hash: computeRuleHash(draft.clauses),
+    name: draft.name,
+    clauses: draft.clauses,
+    uncompiledLanguage: draft.uncompiledLanguage,
+    custom_reason_codes: draft.custom_reason_codes,
+    ...RESERVED_FIELDS,
+  };
+  return ruleSpecSchema.parse(spec);
+}
+
+export function loadRuleArtifact(input, options = {}) {
+  const parsed = typeof input === "string" ? parseArtifactJson(input) : input;
+  const outerVersion = inspectArtifactVersion(parsed);
+  const contained = parsed.artifact === "session_bundle" || parsed.ruleSpec ? parsed.ruleSpec : parsed;
+  if (!contained || typeof contained !== "object") throw artifactLoadError("The uploaded session bundle does not contain a RuleSpec.");
+  const version = parsed.artifact === "session_bundle" || parsed.ruleSpec ? inspectArtifactVersion(contained) : outerVersion;
+  if (!outerVersion.migrationRequired && !version.migrationRequired) return { ruleSpec: parseCurrentRuleSpec(contained), notice: null };
+  const legacy = contained;
+  try {
+    return { ruleSpec: finalizeRuleSpec({
+      name: legacy.name,
+      clauses: legacy.clauses,
+      uncompiledLanguage: legacy.uncompiledLanguage || [],
+      custom_reason_codes: legacy.custom_reason_codes || {},
+    }, options), notice: migrationNotice(version.found) };
+  } catch {
+    throw artifactLoadError("The older artifact could not be migrated safely. Its rule fields are incomplete or invalid.");
+  }
+}
+
+const optionalText = (maximum) => z.preprocess((value) => value === null || value === undefined ? "" : value, z.string().trim().max(maximum));
+const optionalNumber = z.preprocess((value) => value === null || value === "" ? undefined : value, z.coerce.number().nonnegative().optional());
 
 export const applicantProfileSchema = z.object({
   organizationName: z.string().trim().min(1).max(240),
-  ein: z.string().trim().max(20).optional().default(""),
-  filingRelationship: z.string().trim().max(120).optional().default(""),
-  annualBudget: z.coerce.number().nonnegative().optional(),
-  yearsOperating: z.coerce.number().nonnegative().optional(),
-  geography: z.string().trim().max(300).optional().default(""),
-  issueArea: z.string().trim().max(300).optional().default(""),
-  orgType: z.string().trim().max(160).optional().default(""),
-  description: z.string().trim().max(2000).optional().default(""),
+  ein: optionalText(20),
+  filingRelationship: optionalText(120),
+  annualBudget: optionalNumber,
+  yearsOperating: optionalNumber,
+  geography: optionalText(300),
+  issueArea: optionalText(300),
+  orgType: optionalText(160),
+  description: optionalText(2000),
 }).strict();
 
 export const funnelInputSchema = z.object({
@@ -78,8 +135,12 @@ export const funnelInputSchema = z.object({
 }).strict();
 
 export function evaluateProfile(ruleSpec, profile) {
-  const spec = ruleSpecSchema.parse(ruleSpec);
-  const facts = normalizeProfile(applicantProfileSchema.parse(profile));
+  const spec = normalizeRuleSpecInput(ruleSpec);
+  return evaluateParsedProfile(spec, applicantProfileSchema.parse(profile));
+}
+
+function evaluateParsedProfile(spec, profile) {
+  const facts = normalizeProfile(profile);
   const evaluations = [];
 
   for (const clause of spec.clauses) {
@@ -90,7 +151,7 @@ export function evaluateProfile(ruleSpec, profile) {
           status: "INDETERMINATE",
           decidingClauseId: clause.id,
           decidingClause: clause.sourceSentence,
-          reasonCode: "INDETERMINATE_MISSING_FACT",
+          reasonCode: MISSING_FACT_REASON_CODE,
           missingFact: clause.fact,
           evaluations,
         };
@@ -124,19 +185,26 @@ export function evaluateProfile(ruleSpec, profile) {
 }
 
 export function evaluateCandidateSet(ruleSpec, profiles) {
+  const spec = normalizeRuleSpecInput(ruleSpec);
   const results = profiles.map((raw) => {
     const profile = applicantProfileSchema.parse(raw);
-    return { profile, outcome: evaluateProfile(ruleSpec, profile) };
+    return { profile, outcome: evaluateParsedProfile(spec, profile) };
   });
+  return summarizeCandidateResults(spec, results);
+}
+
+export function summarizeCandidateResults(ruleSpec, results) {
+  const spec = normalizeRuleSpecInput(ruleSpec);
   return {
     results,
-    clauseSummary: summarizeClauses(ruleSpec, results),
-    impactReport: buildImpactReport(ruleSpec, results),
+    clauseSummary: summarizeClauses(spec, results),
+    clauseFrequency: buildClauseFrequency(spec, results),
+    impactReport: buildImpactReport(spec, results),
   };
 }
 
 export function generateSelfScreen(ruleSpec) {
-  const spec = ruleSpecSchema.parse(ruleSpec);
+  const spec = normalizeRuleSpecInput(ruleSpec);
   const questions = spec.clauses.filter((clause) => clause.mandatory).map((clause) => ({
     clauseId: clause.id,
     question: clause.selfScreenQuestion,
@@ -146,11 +214,33 @@ export function generateSelfScreen(ruleSpec) {
   }));
   const plainText = questions.map((item, index) => `${index + 1}. ${item.question} [${item.clauseId}]`).join("\n");
   const html = `<ol>\n${questions.map((item) => `  <li data-clause-id="${escapeHtml(item.clauseId)}">${escapeHtml(item.question)}</li>`).join("\n")}\n</ol>`;
-  return { questions, plainText, html };
+  return { rule_hash: spec.rule_hash, questions, plainText, html };
+}
+
+export function evaluateSelfScreen(ruleSpec, profile) {
+  const spec = normalizeRuleSpecInput(ruleSpec);
+  const facts = normalizeProfile(applicantProfileSchema.parse(profile));
+  for (const clause of spec.clauses.filter((item) => item.mandatory)) {
+    const actual = facts[clause.fact];
+    if (isMissing(actual)) return { status: "INDETERMINATE", decidingClauseId: clause.id, reasonCode: MISSING_FACT_REASON_CODE, missingFact: clause.fact };
+    if (!applyOperator(actual, clause.operator, clause.value, clause.fact)) return { status: "EXCLUDE", decidingClauseId: clause.id, reasonCode: clause.reasonCode, missingFact: null };
+  }
+  return { status: "ADMIT", decidingClauseId: null, reasonCode: null, missingFact: null };
 }
 
 export function calculateFunnel(rawInputs) {
+  const provided = new Set(Object.keys(rawInputs || {}));
   const inputs = funnelInputSchema.parse(rawInputs || {});
+  const defaultSources = {
+    grantSize: "Tool planning default: $250,000",
+    totalPool: "Tool planning default: $10 million",
+    expectedApplications: "Tool planning default: 200 applications",
+    minutesPerFirstRead: "Tool planning default: 20 minutes",
+    hoursPerApplication: "Tool planning default: 8 hours",
+    loadedHourlyCost: "Tool planning default: $65 per hour",
+    applicantHoursPerApplication: "Tool planning default: 24 hours",
+    applicantHourlyValue: "Tool planning default: $35 per hour",
+  };
   const grantsAvailable = Math.floor(inputs.totalPool / inputs.grantSize);
   const reviewerHours = inputs.expectedApplications * (inputs.minutesPerFirstRead / 60 + inputs.hoursPerApplication);
   const applicantHours = inputs.expectedApplications * inputs.applicantHoursPerApplication;
@@ -159,6 +249,8 @@ export function calculateFunnel(rawInputs) {
   const applicantCostPerDollarGranted = inputs.totalPool > 0 ? applicantCost / inputs.totalPool : null;
   return {
     inputs,
+    inputSources: Object.fromEntries(Object.keys(inputs).map((key) => [key, provided.has(key) ? "foundation_input" : "tool_default"])),
+    defaultSources,
     outputs: { grantsAvailable, reviewerHours, reviewerCost, applicantHours, applicantCost, applicantCostPerDollarGranted },
     arithmetic: [
       `Grants available = floor(${inputs.totalPool} / ${inputs.grantSize}) = ${grantsAvailable}`,
@@ -231,6 +323,20 @@ function summarizeClauses(ruleSpec, results) {
   })).sort((left, right) => right.excluded - left.excluded || right.indeterminate - left.indeterminate || left.clauseId.localeCompare(right.clauseId));
 }
 
+function buildClauseFrequency(ruleSpec, results) {
+  return ruleSpec.clauses.map((clause) => {
+    let excluded = 0;
+    let indeterminate = 0;
+    for (const item of results) {
+      const isolated = { ...ruleSpec, clauses: [clause], rule_hash: computeRuleHash([clause]) };
+      const outcome = evaluateParsedProfile(isolated, item.profile);
+      if (outcome.status === "EXCLUDE") excluded += 1;
+      if (outcome.status === "INDETERMINATE") indeterminate += 1;
+    }
+    return { clauseId: clause.id, sourceSentence: clause.sourceSentence, excluded, indeterminate };
+  }).sort((left, right) => right.excluded - left.excluded || right.indeterminate - left.indeterminate || left.clauseId.localeCompare(right.clauseId));
+}
+
 function buildImpactReport(ruleSpec, results) {
   const isThin = (profile) => ["fiscal_sponsor", "990_n", "group_return"].includes(normalizeText(profile.filingRelationship)) || Number(profile.yearsOperating) < 3;
   const thin = results.filter((item) => isThin(item.profile));
@@ -270,3 +376,7 @@ function normalizeForFact(value, fact) {
 }
 function round(value, digits = 2) { const factor = 10 ** digits; return Math.round((Number(value) + Number.EPSILON) * factor) / factor; }
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]); }
+function normalizeRuleSpecInput(value) { return value?.artifact === "rule_spec" ? ruleSpecSchema.parse(value) : finalizeRuleSpec(value); }
+function parseArtifactJson(value) { try { return JSON.parse(value); } catch { throw artifactLoadError("The uploaded artifact is not valid JSON."); } }
+function parseCurrentRuleSpec(value) { const parsed = ruleSpecSchema.safeParse(value); if (!parsed.success) throw artifactLoadError("The uploaded RuleSpec failed schema or rule-hash validation."); return parsed.data; }
+function artifactLoadError(message) { const error = new Error(message); error.statusCode = 400; error.publicMessage = message; error.code = "ARTIFACT_LOAD_ERROR"; return error; }

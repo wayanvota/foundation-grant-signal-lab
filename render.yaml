@@ -21,6 +21,8 @@ services:
       - key: REVIEW_RATE_LIMIT_WINDOW_MS
         value: "600000"
       - key: REVIEW_TIMEOUT_MS
-        value: "45000"
+        value: "120000"
+      - key: RULE_COMPILER_TIMEOUT_MS
+        value: "120000"
       - key: OPENAI_API_KEY
         sync: false

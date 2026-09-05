@@ -1,6 +1,7 @@
 const config = window.GRANT_SIGNAL_CONFIG || {};
 const apiBaseUrl = (config.apiBaseUrl || "").replace(/\/$/, "");
 let latestDesign = null;
+let uploadedRuleArtifact = null;
 
 const byId = (id) => document.querySelector(`#${id}`);
 const fields = new Proxy({}, { get: (_target, key) => byId(String(key)) });
@@ -28,11 +29,16 @@ fields["call-design-form"].addEventListener("submit", runCallDesign);
 fields["starter-profiles-button"].addEventListener("click", loadStarterProfiles);
 fields["add-profile-button"].addEventListener("click", () => addProfileRow({}));
 fields["profiles-csv"].addEventListener("change", importProfilesCsv);
-fields["rule-text"].addEventListener("input", updateDesignReadiness);
-fields["rule-file"].addEventListener("change", updateDesignReadiness);
+fields["rule-text"].addEventListener("input", () => { if (fields["rule-text"].value.trim()) clearUploadedRuleArtifact(); updateDesignReadiness(); });
+fields["rule-file"].addEventListener("change", () => { if (fields["rule-file"].files.length) clearUploadedRuleArtifact(); updateDesignReadiness(); });
+fields["rule-spec-file"].addEventListener("change", importRuleArtifact);
 fields["download-rulespec"].addEventListener("click", () => latestDesign && downloadJson("foundation-rule-spec.json", latestDesign.ruleSpec));
-fields["download-bundle"].addEventListener("click", () => latestDesign && downloadJson("foundation-signal-lab-session.json", { version: "1.0", exportedAt: new Date().toISOString(), ...latestDesign }));
+fields["download-bundle"].addEventListener("click", () => latestDesign && downloadJson("foundation-signal-lab-session.json", latestDesign.sessionBundle));
 fields["download-self-screen"].addEventListener("click", () => latestDesign && downloadJson("foundation-self-screen.json", latestDesign.selfScreen));
+fields["download-exclusion-report"].addEventListener("click", () => latestDesign && downloadJson("foundation-exclusion-report.json", latestDesign.exclusionReport));
+fields["download-impact-report"].addEventListener("click", () => latestDesign && downloadJson("foundation-rule-impact-report.json", latestDesign.exclusionReport.impactReport));
+fields["download-funnel-report"].addEventListener("click", () => latestDesign && downloadJson("foundation-funnel-projection.json", latestDesign.funnelProjection));
+fields["download-self-screen-text"].addEventListener("click", () => latestDesign && downloadText("foundation-self-screen.txt", `${latestDesign.selfScreen.plainText}\n\n---\n${artifactFooter(latestDesign.selfScreen)}\n`));
 fields["copy-self-screen"].addEventListener("click", async () => { if (!latestDesign) return; await navigator.clipboard.writeText(latestDesign.selfScreen.plainText); setDesignStatus("Self-screen questions copied."); });
 
 fields["review-form"].addEventListener("submit", runReview);
@@ -59,13 +65,14 @@ function switchMode(mode) {
 async function runCallDesign(event) {
   event.preventDefault();
   if (!apiBaseUrl) return setDesignStatus("The analysis service is not configured.", true);
-  const hasRule = fields["rule-text"].value.trim().length >= 20 || fields["rule-file"].files.length;
+  const hasRule = fields["rule-text"].value.trim().length >= 20 || fields["rule-file"].files.length || uploadedRuleArtifact;
   if (!hasRule) return setDesignStatus("Paste or upload a draft rule first.", true);
   setDesignRunning(true);
   try {
     const form = new FormData();
     form.set("ruleText", fields["rule-text"].value);
     if (fields["rule-file"].files.length) form.set("ruleFile", fields["rule-file"].files[0]);
+    if (uploadedRuleArtifact) form.set("ruleArtifact", JSON.stringify(uploadedRuleArtifact));
     form.set("candidateProfiles", JSON.stringify(readProfileRows()));
     form.set("funnel", JSON.stringify(readFunnelInputs()));
     const response = await fetch(`${apiBaseUrl}/api/call-designs`, { method: "POST", body: form });
@@ -83,6 +90,8 @@ function renderCallDesign(result) {
   fields["design-results"].hidden = false;
   fields["rule-name"].textContent = result.ruleSpec.name;
   fields["design-method"].textContent = result.method;
+  fields["migration-notice"].hidden = !result.migrationNotice;
+  fields["migration-notice"].textContent = result.migrationNotice || "";
   fields["candidate-set-label"].textContent = result.candidateSetSource === "fictional_starter_set" ? "12 fictional profiles" : `${result.exclusionReport.results.length} supplied profiles`;
 
   clear(fields["compiled-clauses"]);
@@ -99,7 +108,7 @@ function renderCallDesign(result) {
   if (!result.ruleSpec.uncompiledLanguage.length) appendEmpty(fields["uncompiled-language"], "No uncompiled language was returned.");
   for (const item of result.ruleSpec.uncompiledLanguage) {
     const card = element("article", "evidence-card uncompiled-card");
-    card.append(sourceBlock("Draft rule", item.sourceSentence), textElement("p", item.reason, "question"));
+    card.append(sourceBlock("Draft rule", item.sourceSentence), textElement("p", item.reason, "question"), textElement("p", `Possible testable substitute: ${item.suggestion}`, "question"));
     fields["uncompiled-language"].append(card);
   }
 
@@ -108,6 +117,13 @@ function renderCallDesign(result) {
     const row = document.createElement("tr");
     row.append(textElement("td", item.profile.organizationName), tableTag(item.outcome.status), textElement("td", item.outcome.reasonCode || ""), textElement("td", item.outcome.decidingClauseId || "All mandatory clauses passed"));
     fields["exclusion-report"].append(row);
+  }
+
+  clear(fields["clause-frequency"]);
+  for (const item of result.exclusionReport.clauseFrequency) {
+    const row = document.createElement("tr");
+    row.append(textElement("td", item.clauseId), textElement("td", formatNumber(item.excluded)), textElement("td", formatNumber(item.indeterminate)), textElement("td", item.sourceSentence));
+    fields["clause-frequency"].append(row);
   }
 
   const impact = result.exclusionReport.impactReport;
@@ -133,6 +149,7 @@ function renderCallDesign(result) {
   for (const line of result.funnelProjection.arithmetic) fields["funnel-arithmetic"].append(textElement("li", line));
   clear(fields["instrumentation-plan"]);
   for (const item of result.instrumentationPlan) fields["instrumentation-plan"].append(infoCard(item.field, item.purpose));
+  fields["artifact-footer"].textContent = artifactFooter(result.exclusionReport);
   fields["design-results"].scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -155,6 +172,7 @@ async function importProfilesCsv(event) {
     if (rows.length < 2) throw new Error("The CSV needs a header row and at least one profile.");
     const headers = rows[0].map(normalizeHeader);
     const profiles = rows.slice(1).filter((row) => row.some((cell) => cell.trim())).map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index] || ""])));
+    if (profiles.length > 500) throw new Error(`The CSV contains ${profiles.length} profiles. The maximum is 500.`);
     fields["profile-list"].replaceChildren();
     for (const profile of profiles) addProfileRow({
       organizationName: profile.organizationname || profile.name,
@@ -170,6 +188,26 @@ async function importProfilesCsv(event) {
     setDesignStatus(`Loaded ${profiles.length} profile${profiles.length === 1 ? "" : "s"} from CSV.`);
   } catch (error) { setDesignStatus(error.message || "The CSV could not be read.", true); }
   event.target.value = "";
+}
+
+async function importRuleArtifact(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    uploadedRuleArtifact = JSON.parse(await file.text());
+    fields["rule-text"].value = "";
+    fields["rule-file"].value = "";
+    updateDesignReadiness();
+    setDesignStatus(`Loaded ${file.name}. Version compatibility will be checked before any rule fields are used.`);
+  } catch {
+    uploadedRuleArtifact = null;
+    setDesignStatus("The uploaded artifact is not valid JSON.", true);
+  }
+}
+
+function clearUploadedRuleArtifact() {
+  uploadedRuleArtifact = null;
+  fields["rule-spec-file"].value = "";
 }
 
 function addProfileRow(profile) {
@@ -237,7 +275,7 @@ function renderSources(container, sources) { clear(container); for (const source
 
 function updateFilingContext() { const sponsored = fields["filing-context"].value === "fiscal_sponsor"; fields["sponsor-field"].hidden = !sponsored; fields["fiscal-sponsor-name"].required = sponsored; }
 function updateReadiness() { const complete = fields["applicant-name"].value.trim().length > 1 && /^\d{2}-?\d{7}$/.test(fields.ein.value.trim()) && (fields.proposal.value.trim().length >= 80 || fields["proposal-file"].files.length) && fields["foundation-strategy"].value.trim().length >= 80; fields.readiness.textContent = complete ? "Ready for filing check" : "Needs source material"; }
-function updateDesignReadiness() { const complete = fields["rule-text"].value.trim().length >= 20 || fields["rule-file"].files.length; fields["design-readiness"].textContent = complete ? "Ready to compile" : "Needs a draft rule"; }
+function updateDesignReadiness() { const complete = fields["rule-text"].value.trim().length >= 20 || fields["rule-file"].files.length || uploadedRuleArtifact; fields["design-readiness"].textContent = complete ? (uploadedRuleArtifact ? "Ready to load" : "Ready to compile") : "Needs a draft rule"; }
 function setDesignRunning(running) { fields["compile-button"].disabled = running; fields["compile-button"].textContent = running ? "Compiling and testing…" : "Compile and test this call"; fields["design-progress"].hidden = !running; }
 function setReviewRunning(running) { fields["submit-button"].disabled = running; fields["sample-inline-button"].disabled = running; fields["submit-button"].textContent = running ? "Generating memo…" : "Generate diligence memo"; fields["review-progress"].hidden = !running; }
 function setDesignStatus(message, error = false) { fields["design-status"].textContent = message; fields["design-status"].classList.toggle("error", error); }
@@ -246,6 +284,8 @@ function setStatus(message, error = false) { fields["form-status"].textContent =
 function parseCsv(text) { const rows = []; let row = [], cell = "", quoted = false; for (let i = 0; i < text.length; i += 1) { const char = text[i]; if (char === '"' && quoted && text[i + 1] === '"') { cell += '"'; i += 1; } else if (char === '"') quoted = !quoted; else if (char === "," && !quoted) { row.push(cell); cell = ""; } else if ((char === "\n" || char === "\r") && !quoted) { if (char === "\r" && text[i + 1] === "\n") i += 1; row.push(cell); rows.push(row); row = []; cell = ""; } else cell += char; } if (cell || row.length) { row.push(cell); rows.push(row); } return rows; }
 function normalizeHeader(value) { return String(value).trim().toLowerCase().replace(/[^a-z0-9]/g, ""); }
 function downloadJson(filename, value) { const blob = new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href); }
+function downloadText(filename, value) { const blob = new Blob([value], { type: "text/plain;charset=utf-8" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href); }
+function artifactFooter(value) { const footer = value.footer || value; return `Rule hash: ${footer.rule_hash} | Schema: ${footer.schema_version} | Run: ${footer.generated_at} | Generator: ${footer.generator_version}`; }
 function renderMetrics(container, metrics) { clear(container); for (const [label, value] of metrics) { const card = element("article", "metric-card"); card.append(textElement("small", label), textElement("strong", value)); container.append(card); } }
 function infoCard(title, body) { const card = element("article", "evidence-card"); card.append(textElement("h3", title), textElement("p", body)); return card; }
 function tableTag(value) { const cell = document.createElement("td"); cell.append(tag(value, `status-tag ${value.toLowerCase()}`)); return cell; }
