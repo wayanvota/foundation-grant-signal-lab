@@ -156,4 +156,10 @@ Every report uses the common metadata header plus `rule_hash`:
 
 `clauseFrequency` tests every clause independently against every profile. It therefore answers how many applicants each clause would exclude, even when an earlier clause determined an applicant's final outcome.
 
+`clauseFrequencyFindings` names clauses that exclude no profiles and encounter no missing facts, and clauses that independently exclude every profile. These are diagnostic findings about the tested set, not automatic instructions to remove or retain a clause.
+
+The Rule Impact Report sets `computed` to `false` and returns null rates when either the filing-thin or other group contains fewer than 10 profiles. When both groups meet the minimum, `clauseDrivers` includes each group's deciding-clause count and rate, and `attribution` names the largest observed non-filing clause gap. No confidence interval or significance claim is produced.
+
+The funnel projection separates first reads from advanced review. `admittedCount` comes from the candidate exclusion report when profiles were supplied. Otherwise it is calculated from the visible `expectedAdmitRate`. Applicant labor cost is returned as both dollars per grant dollar and cents per grant dollar, with both conversions in `arithmetic`.
+
 The `rule_impact_report`, `self_screen`, and `funnel_projection` artifacts follow the same header. The plain-text self-screen contains numbered questions and clause IDs for pasting into a call document. Visible report footers print the rule hash, schema version, run time, and generator version.

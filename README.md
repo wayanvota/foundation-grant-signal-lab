@@ -40,14 +40,14 @@ Outputs:
 
 - Versioned, hashed `RuleSpec`, including exact source sentences, uncompiled language, and suggested factual substitutes for human review
 - Candidate exclusion report with reason codes and deciding clauses
-- Clause-frequency table showing how many profiles each clause would independently exclude
-- Rule Impact Report comparing filing-thin profiles with the rest of the candidate set
+- Clause-frequency table showing how many profiles each clause would independently exclude, plus findings for clauses that exclude none or all of the tested set
+- Rule Impact Report comparing filing-thin profiles with the rest of the candidate set only when both groups contain at least 10 profiles, with deciding-clause attribution when computed
 - Self-screen questions as JSON, plain text, and copy-ready HTML
-- Funnel and burden projection with visible arithmetic
+- Two-stage funnel and burden projection with visible first-read and advanced-review arithmetic, a user-editable admit-rate assumption when profiles are absent, and applicant cost in dollars and cents per grant dollar
 - Intake instrumentation plan
 - Downloadable RuleSpec and session bundle; the server retains neither
 
-The complete fictional [worked example](https://wayan.com/grant-signal-lab/worked-example.html) can be inspected without running the compiler. The artifact contract and migration behavior are documented in [`docs/SCHEMA.md`](docs/SCHEMA.md).
+The complete fictional [worked example](https://wayan.com/grant-signal-lab/worked-example.html) can be inspected without running the compiler. Its twelve profiles come from `fixtures/starter-profiles.json`, the same source returned by the app, and include seven admissions, four exclusions, one indeterminate result, numeric boundary cases, and four filing structures. The artifact contract and migration behavior are documented in [`docs/SCHEMA.md`](docs/SCHEMA.md).
 
 ## Diligence inputs
 
@@ -133,7 +133,7 @@ npm test
 npm run build:frontend
 ```
 
-The current suite covers filing exceptions, claim comparison, financial input visibility, prompt injection handling, provider retries, fixture privacy, publication constraints, artifact migration, a byte-identical 20-run determinism gate, and 100-profile self-screen parity at boundaries and missing values.
+The current suite covers filing exceptions, claim comparison, financial input visibility, prompt injection handling, provider retries, fixture privacy, publication constraints, artifact migration, a byte-identical 20-run determinism gate, and 100-profile self-screen parity at boundaries and missing values. The public Method section prints both release-gate results and the run date.
 
 The adversarial matrix adds source-quality stops, legal-name/EIN identity checks, Unicode and zero-width prompt obfuscation, role tags, encoded commands, prompt extraction, literal XSS and SQL strings, malformed and oversized requests, hostile origins, excessive multipart fields, unsupported uploads, multilingual proposals, complex claims, and explicit eligibility conflicts. Run deterministic coverage with `npm test` and paid end-to-end provider coverage with `npm run test:adversarial:live`.
 

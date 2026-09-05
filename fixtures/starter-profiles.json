@@ -1,0 +1,133 @@
+[
+  {
+    "organizationName": "Harbor Youth Learning",
+    "ein": "",
+    "filingRelationship": "standalone",
+    "annualBudget": 2400000,
+    "yearsOperating": 7,
+    "geography": "United States",
+    "issueArea": "youth learning",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile for rule testing."
+  },
+  {
+    "organizationName": "Mesa Food Futures",
+    "ein": "",
+    "filingRelationship": "fiscal_sponsor",
+    "annualBudget": 180000,
+    "yearsOperating": 2,
+    "geography": "Arizona",
+    "issueArea": "food security",
+    "orgType": "fiscally sponsored project",
+    "description": "Fictional candidate profile at the operating-history boundary."
+  },
+  {
+    "organizationName": "Delta Maternal Health Circle",
+    "ein": "",
+    "filingRelationship": "990_n",
+    "annualBudget": 46000,
+    "yearsOperating": 5,
+    "geography": "Mississippi",
+    "issueArea": "maternal health",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile for rule testing."
+  },
+  {
+    "organizationName": "Great Lakes Youth Affiliate",
+    "ein": "",
+    "filingRelationship": "group_return",
+    "annualBudget": 920000,
+    "yearsOperating": 4,
+    "geography": "Michigan",
+    "issueArea": "youth learning",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile for rule testing."
+  },
+  {
+    "organizationName": "New Horizons Food Project",
+    "ein": "",
+    "filingRelationship": "no_filing",
+    "annualBudget": 310000,
+    "yearsOperating": 3,
+    "geography": "Kentucky",
+    "issueArea": "food security",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile without a filing."
+  },
+  {
+    "organizationName": "Prairie Maternal Collaborative",
+    "ein": "",
+    "filingRelationship": "standalone",
+    "annualBudget": 760000,
+    "yearsOperating": 6,
+    "geography": "Kansas",
+    "issueArea": "maternal health",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile for rule testing."
+  },
+  {
+    "organizationName": "Coastal Food Network",
+    "ein": "",
+    "filingRelationship": "standalone",
+    "annualBudget": 1300000,
+    "yearsOperating": 2.5,
+    "geography": "North Carolina",
+    "issueArea": "food security",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile for rule testing."
+  },
+  {
+    "organizationName": "Emerging Youth Lab",
+    "ein": "",
+    "filingRelationship": "fiscal_sponsor",
+    "annualBudget": 210000,
+    "yearsOperating": 1,
+    "geography": "California",
+    "issueArea": "youth learning",
+    "orgType": "fiscally sponsored project",
+    "description": "Fictional candidate profile below the operating-history threshold."
+  },
+  {
+    "organizationName": "Seed Maternal Circle",
+    "ein": "",
+    "filingRelationship": "990_n",
+    "annualBudget": 42000,
+    "yearsOperating": 1.5,
+    "geography": "Ohio",
+    "issueArea": "maternal health",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile below the operating-history threshold."
+  },
+  {
+    "organizationName": "Regional Food Business League",
+    "ein": "",
+    "filingRelationship": "standalone",
+    "annualBudget": 840000,
+    "yearsOperating": 9,
+    "geography": "New York",
+    "issueArea": "food security",
+    "orgType": "501(c)(6)",
+    "description": "Fictional candidate profile with an ineligible organization type."
+  },
+  {
+    "organizationName": "Prairie Arts Exchange",
+    "ein": "",
+    "filingRelationship": "standalone",
+    "annualBudget": 380000,
+    "yearsOperating": 8,
+    "geography": "Illinois",
+    "issueArea": "arts",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile outside the stated issue areas."
+  },
+  {
+    "organizationName": "Neighborhood Learning Affiliate",
+    "ein": "",
+    "filingRelationship": "group_return",
+    "annualBudget": 290000,
+    "geography": "Virginia",
+    "issueArea": "youth learning",
+    "orgType": "501(c)(3)",
+    "description": "Fictional candidate profile missing required operating history."
+  }
+]
