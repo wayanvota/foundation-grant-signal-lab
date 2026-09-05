@@ -1,8 +1,8 @@
 {
   "name": "foundation-grant-signal-lab",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": false,
-  "description": "Stateless, filing-backed proposal diligence for foundation program officers.",
+  "description": "Stateless call design, deterministic eligibility testing, and filing-backed proposal diligence for foundation program officers.",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"
@@ -12,7 +12,7 @@
     "dev": "FRONTEND_ORIGIN=http://localhost:4173 node api/server.js",
     "migrate": "node api/migrate.js",
     "build:frontend": "node scripts/build-static.mjs",
-    "check": "node --check api/server.js && node --check api/review.js && node --check src/provider.js && node --check frontend/app.js && npm run check:forbidden",
+    "check": "node --check api/server.js && node --check api/review.js && node --check api/callDesign.js && node --check src/provider.js && node --check src/ruleCompiler.js && node --check src/ruleSpec.js && node --check frontend/app.js && npm run check:forbidden",
     "check:forbidden": "node scripts/check-forbidden.mjs",
     "test": "node --test",
     "test:adversarial:live": "node scripts/run-adversarial-live.mjs",

@@ -1,14 +1,20 @@
 # Foundation Grant Signal Lab
 
-Foundation Grant Signal Lab helps a foundation program officer answer one screening question: should this proposal advance to real diligence?
+Foundation Grant Signal Lab supports a program officer across an open call. Version 2 ships Call Design first while retaining the existing Diligence Memo.
 
-The tool reads a proposal against the applicant's public Form 990 data and the foundation's stated strategy. It returns one traceable memo with a fixed recommendation, a board line, proposal-to-filing claim checks, financial diligence questions, strategy findings, an internal review route, and next actions.
+Call Design compiles draft eligibility prose into a readable `RuleSpec`, runs deterministic eligibility code against fictional or supplied candidate profiles, reports exclusion effects, generates self-screen questions, and projects reviewer and applicant burden. Diligence Memo reads a proposal against available Form 990 evidence and the foundation's stated strategy.
+
+The four-mode product sequence is Call Design, Intake Screen, Diligence Memo, and Cohort Report. This release enables Call Design and Diligence Memo. Intake Screen and Cohort Report remain visible as later phases, rather than appearing to be available.
 
 Live site: [wayan.com/grant-signal-lab](https://wayan.com/grant-signal-lab/)
 
 API data source: [ProPublica Nonprofit Explorer API](https://projects.propublica.org/nonprofits/api/)
 
 ## Decision boundary
+
+Eligibility outcomes in Call Design come from `src/ruleSpec.js`. The model may compile prose into a structured specification, but no model participates in an `ADMIT`, `EXCLUDE`, or `INDETERMINATE` result. Each exclusion retains a reason code and deciding clause. Missing facts return `INDETERMINATE`; the evaluator never guesses.
+
+The tool refuses to recommend an award, score or rank applicants by quality, assess community accountability or representation, predict funding probability, or compile language that cannot be stated as a testable fact.
 
 The four recommendations are:
 
@@ -21,7 +27,25 @@ These recommendations concern whether a proposal should enter real diligence. Th
 
 Proposal-to-filing divergence is always phrased as a program officer's question. A current proposal may differ legitimately from a public filing that describes an older tax year.
 
-## Inputs
+## Call Design inputs and outputs
+
+Inputs:
+
+- Draft eligibility text, pasted or uploaded as TXT, Markdown, PDF, or DOCX
+- Optional candidate profiles, entered manually or uploaded as CSV
+- Foundation-set grant pool, grant size, application volume, review-time, and labor-cost assumptions
+
+Outputs:
+
+- Readable `RuleSpec`, including exact source sentences and uncompiled language
+- Candidate exclusion report with reason codes and deciding clauses
+- Rule Impact Report comparing filing-thin profiles with the rest of the candidate set
+- Self-screen questions as JSON, plain text, and copy-ready HTML
+- Funnel and burden projection with visible arithmetic
+- Intake instrumentation plan
+- Downloadable RuleSpec and session bundle; the server retains neither
+
+## Diligence inputs
 
 - Applicant legal name
 - EIN, required
@@ -45,16 +69,16 @@ Financial signals expose their inputs. The operating-reserve measure is explicit
 
 Automated judgment stops when:
 
-- no filed return with extracted financial detail is available
-- the applicant files Form 990-N
 - a fiscal year change creates a short period
-- the filing is a group return
-- the applicant operates through a fiscal sponsor
 - source safeguards cannot produce reliable input
 - the review engine times out
 - structured output fails validation after one retry
 
 Each condition returns `NEEDS HUMAN CHECK` with a reason and a concrete next step.
+
+Normal filing-thin organizational forms now receive distinct review paths rather than a bare stop. Fiscal sponsorship uses the sponsor filing as context and requests project-level evidence. Group returns name the affiliate-level gap. Form 990-N establishes limited filing facts and produces small-filer document questions. Organizations under three years old or without a comparable return receive a strategy review plus a substitute-document list.
+
+The ask-to-revenue review threshold is a visible foundation input. The memo prints the threshold used and states that the foundation set it.
 
 ## Safety and privacy
 
@@ -72,6 +96,9 @@ CI runs a repository-wide publication constraint check, syntax checks, tests, an
 - `src/reviewPrompt.js`: prompt boundary for untrusted source material
 - `src/reviewSchema.js`: structured memo and traceability validation
 - `src/provider.js`: live review call, timeout, and same-provider schema retry
+- `src/ruleCompiler.js`: constrained prose-to-RuleSpec compilation with quote validation
+- `src/ruleSpec.js`: deterministic evaluator, self-screen generator, impact report, starter profiles, funnel arithmetic, and reason codes
+- `api/callDesign.js`: stateless Mode 1 orchestration
 - `api/review.js`: stateless orchestration and terminal human-check memos
 - `api/proposalFile.js`: in-memory TXT, Markdown, PDF, and DOCX extraction
 - `api/server.js`: Express API

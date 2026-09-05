@@ -5,9 +5,13 @@ const allowedTypes = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 
-export async function extractProposalText(file) {
+export async function extractDocumentText(file, {
+  subject = "document",
+  minimumLength = 20,
+  maximumLength = 40_000,
+} = {}) {
   if (!file?.buffer?.length) return "";
-  if (!allowedTypes.has(file.mimetype)) throw publicFileError("Upload a TXT, Markdown, PDF, or DOCX proposal.");
+  if (!allowedTypes.has(file.mimetype)) throw publicFileError(`Upload a TXT, Markdown, PDF, or DOCX ${subject}.`);
 
   let text = "";
   if (file.mimetype === "text/plain" || file.mimetype === "text/markdown") {
@@ -21,9 +25,13 @@ export async function extractProposalText(file) {
   }
 
   const normalized = String(text || "").replace(/\u0000/g, "").trim();
-  if (normalized.length < 80) throw publicFileError("The uploaded proposal did not contain enough readable text. Paste the text instead.");
-  if (normalized.length > 40_000) throw publicFileError("The readable proposal text exceeds 40,000 characters. Upload a shorter decision-relevant excerpt.");
+  if (normalized.length < minimumLength) throw publicFileError(`The uploaded ${subject} did not contain enough readable text. Paste the text instead.`);
+  if (normalized.length > maximumLength) throw publicFileError(`The readable ${subject} text exceeds ${maximumLength.toLocaleString("en-US")} characters. Upload a shorter decision-relevant excerpt.`);
   return normalized;
+}
+
+export function extractProposalText(file) {
+  return extractDocumentText(file, { subject: "proposal", minimumLength: 80, maximumLength: 40_000 });
 }
 
 function publicFileError(message) {

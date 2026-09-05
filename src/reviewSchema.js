@@ -12,8 +12,9 @@ export const reviewInputSchema = z.object({
   ein: z.string().trim().regex(/^\d{2}-?\d{7}$/, "Enter a valid nine-digit EIN."),
   proposal: z.string().trim().min(80).max(40_000),
   foundationStrategy: z.string().trim().min(80).max(30_000),
-  filingContext: z.enum(["standalone", "fiscal_sponsor", "group_return", "990_n"]).default("standalone"),
+  filingContext: z.enum(["standalone", "fiscal_sponsor", "group_return", "990_n", "under_three_years"]).default("standalone"),
   fiscalSponsorName: z.string().trim().max(240).optional().default(""),
+  askToRevenueThreshold: z.coerce.number().min(0).max(5).default(0.25),
 }).superRefine((value, context) => {
   if (value.filingContext === "fiscal_sponsor" && value.fiscalSponsorName.length < 2) {
     context.addIssue({
@@ -34,6 +35,7 @@ const claimSchema = z.object({
   proposalQuote: z.string().min(1),
   category: z.enum([
     "annual_budget",
+    "grant_request",
     "staff_size",
     "program_scale",
     "years_of_operation",
@@ -131,7 +133,7 @@ export const modelReviewJsonSchema = {
           proposalQuote: { type: "string" },
           category: {
             type: "string",
-            enum: ["annual_budget", "staff_size", "program_scale", "years_of_operation", "geographic_reach", "outcomes", "organizational_capacity", "other"],
+            enum: ["annual_budget", "grant_request", "staff_size", "program_scale", "years_of_operation", "geographic_reach", "outcomes", "organizational_capacity", "other"],
           },
           value: { type: ["number", "null"] },
           unit: { type: "string", enum: ["usd", "people", "years", "sites", "percent", "other", "none"] },
