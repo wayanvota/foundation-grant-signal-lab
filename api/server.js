@@ -33,16 +33,17 @@ const callDesignUpload = multer({
   limits: {
     fileSize: 6 * 1024 * 1024,
     files: 1,
-    fields: 4,
-    parts: 5,
+    fields: 5,
+    parts: 6,
     fieldNameSize: 100,
-    fieldSize: 180 * 1024,
+    fieldSize: 12 * 1024 * 1024,
   },
 });
 
 export function createApp({ generateReview = generateGrantReview, generateDesign = generateCallDesign } = {}) {
   const app = express();
   app.set("trust proxy", 1);
+  app.use("/api/call-designs", express.json({ limit: "12mb" }));
   app.use(express.json({ limit: "120kb" }));
   app.use(cors({
     origin(origin, callback) {
@@ -72,7 +73,7 @@ export function createApp({ generateReview = generateGrantReview, generateDesign
     response.json({
       name: "Foundation Grant Signal Lab",
       decision: "Should this foundation advance this proposal to real diligence?",
-      modes: ["CALL DESIGN", "INTAKE SCREEN", "DILIGENCE MEMO", "COHORT REPORT"],
+      modes: ["CALL DESIGN", "DILIGENCE MEMO"],
       availableModes: ["CALL DESIGN", "DILIGENCE MEMO"],
       recommendations: ["ADVANCE", "HOLD FOR DILIGENCE", "DECLINE", "NEEDS HUMAN CHECK"],
       storage: "stateless",
@@ -97,8 +98,10 @@ export function createApp({ generateReview = generateGrantReview, generateDesign
     try {
       const candidateProfiles = parseJsonField(request.body?.candidateProfiles, []);
       const funnel = parseJsonField(request.body?.funnel, {});
+      const ruleArtifact = parseJsonField(request.body?.ruleArtifact, undefined);
       const body = {
         ruleText: [request.body?.ruleText, ruleFromFile].filter(Boolean).join("\n\n"),
+        ruleArtifact,
         candidateProfiles,
         funnel,
       };

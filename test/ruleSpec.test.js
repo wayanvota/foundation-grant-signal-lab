@@ -15,9 +15,9 @@ const ruleSpec = {
 const baseProfile = { organizationName: "Fictional Applicant", filingRelationship: "standalone", annualBudget: 100000, yearsOperating: 4, geography: "North Carolina", issueArea: "health", orgType: "501(c)(3)", description: "Fictional." };
 
 test("the same RuleSpec and profile produce identical clause-level outcomes", () => {
-  const outcomes = Array.from({ length: 20 }, () => evaluateProfile(ruleSpec, baseProfile));
-  for (const outcome of outcomes) assert.deepEqual(outcome, outcomes[0]);
-  assert.equal(outcomes[0].status, "ADMIT");
+  const outputs = Array.from({ length: 20 }, () => JSON.stringify(evaluateProfile(ruleSpec, baseProfile)));
+  for (const output of outputs) assert.equal(output, outputs[0]);
+  assert.equal(JSON.parse(outputs[0]).status, "ADMIT");
 });
 
 test("mandatory failures exclude with the deciding clause and reason code", () => {

@@ -5,7 +5,7 @@ export async function runValidatedReview({
   input,
   filingSummary,
   fetchImpl = fetch,
-  timeoutMs = Number.parseInt(process.env.REVIEW_TIMEOUT_MS || "45000", 10),
+  timeoutMs = Number.parseInt(process.env.REVIEW_TIMEOUT_MS || "120000", 10),
 }) {
   const deadline = Date.now() + timeoutMs;
   let validationError;
