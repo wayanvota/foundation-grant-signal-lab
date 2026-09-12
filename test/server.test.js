@@ -78,7 +78,7 @@ test("HTTP boundary rejects malformed JSON, oversized JSON, hostile origins, and
   assert.deepEqual(await hostileOrigin.json(), { error: "This origin is not allowed to use the review API." });
 
   const excessive = new FormData();
-  for (let index = 0; index < 7; index += 1) excessive.set(`extra${index}`, "value");
+  for (let index = 0; index < 8; index += 1) excessive.set(`extra${index}`, "value");
   const excessiveResponse = await fetch(`${base}/api/reviews`, { method: "POST", body: excessive });
   assert.equal(excessiveResponse.status, 400);
   assert.match((await excessiveResponse.json()).error, /too many fields|too many parts/i);

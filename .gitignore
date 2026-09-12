@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/playwright-report/
+/artifacts/
 
 # misc
 .DS_Store
