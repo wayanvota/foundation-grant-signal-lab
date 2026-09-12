@@ -14,9 +14,14 @@
     "build:frontend": "node scripts/build-static.mjs",
     "check": "node --check api/server.js && node --check api/review.js && node --check api/callDesign.js && node --check src/provider.js && node --check src/ruleCompiler.js && node --check src/ruleSpec.js && node --check src/artifacts.js && node --check src/reasonCodes.js && node --check scripts/worked-example.mjs && node --check frontend/app.js && npm run check:forbidden",
     "check:forbidden": "node scripts/check-forbidden.mjs",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "playwright test",
+    "test:ci": "npm run check && npm test && npm run build:frontend && npm run test:e2e",
     "test:adversarial:live": "node scripts/run-adversarial-live.mjs",
     "serve:frontend": "npx serve frontend -l 4173"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
   },
   "dependencies": {
     "cors": "^2.8.5",

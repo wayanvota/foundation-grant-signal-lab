@@ -133,6 +133,26 @@ npm test
 npm run build:frontend
 ```
 
+The deterministic browser suite adds exactly 10 user-behavior and 10
+adversarial categories around the real Express routes, rule evaluator, and
+static interface. It replaces only model and public-filing responses with
+synthetic fixtures, so CI needs no credentials and incurs no provider charges:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+Run all deterministic release checks with `npm run test:ci`. See
+[`E2E-TEST-REPORT.md`](E2E-TEST-REPORT.md) for the category map and evidence.
+
+The existing paid provider suite remains opt-in. A one-case live smoke can be
+run with an authorized local key and is never part of CI:
+
+```bash
+ADVERSARIAL_CASES=simple-aligned npm run test:adversarial:live
+```
+
 The current suite covers filing exceptions, claim comparison, financial input visibility, prompt injection handling, provider retries, fixture privacy, publication constraints, artifact migration, a byte-identical 20-run determinism gate, and 100-profile self-screen parity at boundaries and missing values. The public Method section prints both release-gate results and the run date.
 
 The adversarial matrix adds source-quality stops, legal-name/EIN identity checks, Unicode and zero-width prompt obfuscation, role tags, encoded commands, prompt extraction, literal XSS and SQL strings, malformed and oversized requests, hostile origins, excessive multipart fields, unsupported uploads, multilingual proposals, complex claims, and explicit eligibility conflicts. Run deterministic coverage with `npm test` and paid end-to-end provider coverage with `npm run test:adversarial:live`.
